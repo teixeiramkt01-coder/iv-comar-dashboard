@@ -473,7 +473,7 @@ sb.auth.onAuthStateChange(async (event, session) => {
   if (session?.user) {
     const meta = session.user.user_metadata;
     currentUser = { user: meta.display_name, sectorId: meta.sector_id ?? null };
-    await carregarDados();
+    try { await carregarDados(); } catch(e) { console.warn('Erro ao carregar dados:', e); }
     mostrarPrincipal();
   } else {
     currentUser = null;
