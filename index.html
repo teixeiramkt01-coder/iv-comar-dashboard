@@ -270,6 +270,37 @@ html,body{min-height:100%;background:var(--bg-root);font-family:-apple-system,Bl
 .alert-text-warn{font-size:13px;color:var(--warn-text);line-height:1.6;}
 .alert-code{font-family:monospace;font-size:10px;color:var(--text-muted);margin-top:5px;}
 
+/* ── SOLICITAÇÃO DE ACESSO ── */
+.req-link{display:block;text-align:center;margin-top:16px;font-size:12px;color:var(--accent-glow);cursor:pointer;text-decoration:underline;background:none;border:none;font-family:inherit;width:100%;}
+.req-link:hover{color:var(--text-primary);}
+#request-screen{min-height:100vh;display:none;align-items:center;justify-content:center;background:var(--bg-root);}
+#request-screen.visible{display:flex;}
+.req-field{margin-bottom:14px;}
+.req-select{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px;color:var(--text-primary);outline:none;font-family:inherit;transition:border 0.2s;appearance:none;}
+.req-select:focus{border-color:var(--accent-glow);box-shadow:0 0 0 3px rgba(21,101,192,0.15);}
+.req-msg{font-size:12px;text-align:center;margin-top:10px;min-height:18px;}
+.req-msg.ok{color:var(--ok-text);}
+.req-msg.err{color:var(--danger-text);}
+
+/* ── PAINEL SOLICITAÇÕES (ADMIN) ── */
+.solicit-list{display:flex;flex-direction:column;gap:10px;}
+.solicit-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.solicit-info{flex:1;min-width:180px;}
+.solicit-name{font-size:13px;font-weight:700;color:var(--text-primary);}
+.solicit-meta{font-size:11px;color:var(--text-muted);margin-top:3px;font-family:monospace;}
+.solicit-status{font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;flex-shrink:0;}
+.solicit-status.pendente{background:var(--warn-bg);color:var(--warn-text);border:1px solid var(--warn-border);}
+.solicit-status.aprovada{background:var(--ok-bg);color:var(--ok-text);border:1px solid var(--ok-border);}
+.solicit-status.rejeitada{background:var(--danger-bg);color:var(--danger-text);border:1px solid var(--danger-border);}
+.solicit-actions{display:flex;gap:8px;flex-shrink:0;}
+.btn-aprovar{background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:700;padding:7px 14px;cursor:pointer;font-family:inherit;transition:background 0.2s;}
+.btn-aprovar:hover{background:var(--accent-bright);}
+.btn-aprovar:disabled{opacity:0.5;cursor:not-allowed;}
+.btn-rejeitar{background:transparent;border:1px solid var(--danger-border);border-radius:6px;color:var(--danger-text);font-size:11px;font-weight:700;padding:7px 14px;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+.btn-rejeitar:hover{background:var(--danger-bg);}
+.btn-rejeitar:disabled{opacity:0.5;cursor:not-allowed;}
+.solicit-empty{font-size:13px;color:var(--text-dim);text-align:center;padding:32px 0;font-style:italic;}
+
 /* SCROLLBAR */
 ::-webkit-scrollbar{width:5px;height:5px;}
 ::-webkit-scrollbar-track{background:var(--bg-root);}
@@ -313,6 +344,56 @@ html,body{min-height:100%;background:var(--bg-root);font-family:-apple-system,Bl
     <button class="login-btn" id="login-btn">ACESSAR SISTEMA</button>
     <div class="login-error" id="login-error"></div>
     <div class="login-footer">COMPREP · Força Aérea Brasileira · Acesso restrito</div>
+    <button class="req-link" onclick="mostrarSolicitacao()">Solicitar acesso ao sistema</button>
+  </div>
+</div>
+
+<!-- SOLICITAÇÃO DE ACESSO -->
+<div id="request-screen">
+  <div class="login-box">
+    <div class="fab-logo">
+      <div class="fab-emblem" style="font-size:22px;">📋</div>
+      <div class="fab-badge">IV COMAR — FAB</div>
+      <div class="login-title">Solicitar Acesso</div>
+      <div class="login-sub">A solicitação será analisada pelo administrador</div>
+    </div>
+    <div class="req-field">
+      <label class="login-label">Identificação (sigla da seção)</label>
+      <input class="login-input" id="req-name" type="text" placeholder="Ex: NOVA, XYZ..." autocomplete="off" style="text-transform:uppercase;"/>
+    </div>
+    <div class="req-field">
+      <label class="login-label">Setor de acesso</label>
+      <select class="req-select" id="req-sector">
+        <option value="">— Selecione o setor —</option>
+        <option value="ACS">ACS — Comunicação Social</option>
+        <option value="AAJ">AAJ — Apoio Jurídico</option>
+        <option value="ARI">ARI — Relações Institucionais</option>
+        <option value="AI">AI — Inteligência</option>
+        <option value="ACP">ACP — Círculo de Praças</option>
+        <option value="AREL">AREL — Assessoria Religiosa</option>
+        <option value="SAE">SAE — Execução Orçamentária</option>
+        <option value="SAGS">SAGS — Gestão e Suporte</option>
+        <option value="SAT">SAT — Atividades Terrestres</option>
+        <option value="SAA">SAA — Atividades Aéreas</option>
+        <option value="SPL">SPL — Planejamento</option>
+        <option value="SGOV">SGOV — Governança</option>
+        <option value="CPCA">CPCA — Prevenção ao Assédio</option>
+        <option value="SEF">SEF — Educação Física</option>
+        <option value="PFV">PFV — Fortalecimento de Valores</option>
+        <option value="SAD">SAD — Seção Administrativa</option>
+      </select>
+    </div>
+    <div class="req-field">
+      <label class="login-label">Senha desejada</label>
+      <input class="login-input" id="req-pass" type="password" placeholder="Mínimo 6 caracteres" autocomplete="off"/>
+    </div>
+    <div class="req-field" style="margin-bottom:20px;">
+      <label class="login-label">Confirmar senha</label>
+      <input class="login-input" id="req-pass2" type="password" placeholder="Repita a senha" autocomplete="off"/>
+    </div>
+    <button class="login-btn" id="req-btn" onclick="enviarSolicitacao()">ENVIAR SOLICITAÇÃO</button>
+    <div class="req-msg" id="req-msg"></div>
+    <button class="req-link" onclick="mostrarLogin()" style="margin-top:8px;">← Voltar ao login</button>
   </div>
 </div>
 
@@ -342,6 +423,7 @@ html,body{min-height:100%;background:var(--bg-root);font-family:-apple-system,Bl
     <button class="tab-btn" data-tab="setores">Tarefas por Setor</button>
     <button class="tab-btn" data-tab="relogios">Indicadores Visuais</button>
     <button class="tab-btn" data-tab="alertas">Alertas</button>
+    <button class="tab-btn" data-tab="solicitacoes" id="tab-solicitacoes" style="display:none;">Solicitações</button>
   </div>
 
   <div class="content">
@@ -409,6 +491,14 @@ html,body{min-height:100%;background:var(--bg-root);font-family:-apple-system,Bl
         <div class="alert-warn"><div class="alert-text-warn"><strong>Plano de Integridade CPCA:</strong> prazo jun/2026. Formalizar plano de comunicação até maio.</div><div class="alert-code">P240402.PRE00.S261803 · CPLG/SGOV + CPCA</div></div>
         <div class="alert-warn"><div class="alert-text-warn"><strong>QTS Treinamento Físico (26SEF001):</strong> verificar publicação mensal na página do IV COMAR.</div><div class="alert-code">P241609.PRE00.S262401 · CADM/SEF</div></div>
         <div class="alert-warn"><div class="alert-text-warn"><strong>Notas de Empenho (26SAE014):</strong> status atrasado — verificar com SAE/CADM imediatamente.</div><div class="alert-code">26SAE014 · SAE/CADM</div></div>
+      </div>
+    </div>
+
+    <!-- SOLICITAÇÕES (ADMIN) -->
+    <div id="panel-solicitacoes" class="panel">
+      <div class="section-title">Solicitações de Acesso</div>
+      <div id="solicit-list" class="solicit-list">
+        <div class="solicit-empty">Carregando...</div>
       </div>
     </div>
 
@@ -511,6 +601,8 @@ function mostrarPrincipal() {
   badge.style.borderColor = currentUser.sectorId ? 'var(--warn-border)' : 'var(--ok-border)';
   badge.style.color       = currentUser.sectorId ? 'var(--warn-text)'   : 'var(--ok-text)';
   updateKPIs();
+  // Mostra aba Solicitações só para admin
+  document.getElementById('tab-solicitacoes').style.display = currentUser.sectorId === null ? '' : 'none';
   const banner = document.getElementById('access-banner');
   if (currentUser.sectorId) {
     banner.style.display = 'flex';
@@ -529,10 +621,20 @@ function mostrarPrincipal() {
 function mostrarLogin() {
   document.getElementById('loading-screen').style.display = 'none';
   document.getElementById('main-screen').classList.remove('visible');
+  document.getElementById('request-screen').classList.remove('visible');
   document.getElementById('login-screen').style.display = 'flex';
   ['login-user','login-pass'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('login-error').textContent = '';
   document.getElementById('access-banner').style.display = 'none';
+}
+
+function mostrarSolicitacao() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('request-screen').classList.add('visible');
+  ['req-name','req-pass','req-pass2'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('req-sector').value = '';
+  document.getElementById('req-msg').textContent = '';
+  document.getElementById('req-msg').className = 'req-msg';
 }
 
 /* ═══ TABS ═══ */
@@ -544,6 +646,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'relogios') renderClocks();
     if (btn.dataset.tab === 'setores') renderSectors('');
+    if (btn.dataset.tab === 'solicitacoes') renderSolicitacoes();
   });
 });
 
@@ -1119,6 +1222,99 @@ function renderClocks() {
     grid.appendChild(card);
     drawDonut(canvas, d, colors);
   });
+}
+
+/* ═══ SOLICITAÇÕES ═══ */
+async function enviarSolicitacao() {
+  const name  = document.getElementById('req-name').value.trim().toUpperCase();
+  const sector = document.getElementById('req-sector').value;
+  const pass  = document.getElementById('req-pass').value;
+  const pass2 = document.getElementById('req-pass2').value;
+  const msg   = document.getElementById('req-msg');
+  const btn   = document.getElementById('req-btn');
+
+  msg.className = 'req-msg err';
+  if (!name)            { msg.textContent = 'Informe a identificação.'; return; }
+  if (!sector)          { msg.textContent = 'Selecione o setor.'; return; }
+  if (pass.length < 6)  { msg.textContent = 'Senha deve ter no mínimo 6 caracteres.'; return; }
+  if (pass !== pass2)   { msg.textContent = 'As senhas não coincidem.'; return; }
+
+  btn.disabled = true; btn.textContent = 'ENVIANDO...';
+
+  const { error } = await sb.from('user_requests').insert({
+    display_name:  name,
+    sector_id:     sector,
+    password_temp: pass,
+    status:        'pendente'
+  });
+
+  btn.disabled = false; btn.textContent = 'ENVIAR SOLICITAÇÃO';
+
+  if (error) {
+    msg.className = 'req-msg err';
+    msg.textContent = 'Erro ao enviar. Tente novamente.';
+  } else {
+    msg.className = 'req-msg ok';
+    msg.textContent = '✔ Solicitação enviada! Aguarde aprovação do administrador.';
+    ['req-name','req-pass','req-pass2'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('req-sector').value = '';
+  }
+}
+
+async function renderSolicitacoes() {
+  const list = document.getElementById('solicit-list');
+  list.innerHTML = '<div class="solicit-empty">Carregando...</div>';
+
+  const { data, error } = await sb
+    .from('user_requests')
+    .select('*')
+    .order('requested_at', { ascending: false });
+
+  if (error) { list.innerHTML = '<div class="solicit-empty">Erro ao carregar solicitações.</div>'; return; }
+  if (!data || data.length === 0) { list.innerHTML = '<div class="solicit-empty">Nenhuma solicitação registrada.</div>'; return; }
+
+  list.innerHTML = '';
+  data.forEach(s => {
+    const card = document.createElement('div'); card.className = 'solicit-card';
+    const dt = new Date(s.requested_at).toLocaleString('pt-BR', {day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+    const reviewInfo = s.reviewed_by ? ` · ${s.reviewed_by === 'aprovada' ? 'Aprovado' : 'Revisado'} por ${s.reviewed_by}` : '';
+
+    card.innerHTML = `
+      <div class="solicit-info">
+        <div class="solicit-name">${s.display_name} — ${s.sector_id || '—'}</div>
+        <div class="solicit-meta">Solicitado em ${dt}${reviewInfo}</div>
+      </div>
+      <span class="solicit-status ${s.status}">${s.status.toUpperCase()}</span>
+      ${s.status === 'pendente' ? `
+        <div class="solicit-actions">
+          <button class="btn-aprovar" onclick="handleSolicitacao('${s.id}','approve',this)">Aprovar</button>
+          <button class="btn-rejeitar" onclick="handleSolicitacao('${s.id}','reject',this)">Rejeitar</button>
+        </div>` : ''}
+    `;
+    list.appendChild(card);
+  });
+}
+
+async function handleSolicitacao(id, action, btn) {
+  btn.disabled = true;
+  btn.closest('.solicit-actions').querySelectorAll('button').forEach(b => b.disabled = true);
+
+  const { data: { session } } = await sb.auth.getSession();
+  const token = session?.access_token;
+
+  const res = await fetch('/api/approve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ request_id: id, action })
+  });
+
+  const json = await res.json();
+  if (!res.ok) {
+    alert('Erro: ' + (json.error || 'Falha na operação'));
+    btn.closest('.solicit-actions').querySelectorAll('button').forEach(b => b.disabled = false);
+    return;
+  }
+  renderSolicitacoes();
 }
 
 function drawDonut(canvas, d, colors) {
