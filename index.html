@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>IV COMAR — Centro de Controle Estratégico PTA 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root {
+  /* FAB Blue - Dark Mode */
+  --bg-root:       #080e18;
+  --bg-surface:    #0d1a2e;
+  --bg-card:       #112240;
+  --bg-input:      #0a1628;
+  --border:        #1e3a5f;
+  --border-light:  #1a3050;
+  --accent:        #1565c0;
+  --accent-bright: #1e88e5;
+  --accent-glow:   #42a5f5;
+  --text-primary:  #cfe3ff;
+  --text-secondary:#7aadda;
+  --text-muted:    #3a6a9a;
+  --text-dim:      #1e3a5f;
+  /* Status */
+  --ok-bg:    #0a2040; --ok-text: #42a5f5; --ok-border: #1565c0;
+  --warn-bg:  #1a1400; --warn-text:#f59e0b; --warn-border:#92400e;
+  --danger-bg:#1a0a08; --danger-text:#ef4444; --danger-border:#7f1d1d;
+  --ni-bg:    #0d1a2e; --ni-text:  #3a6a9a; --ni-border: #1e3a5f;
+  /* Task ok */
+  --tok-bg:#081828; --tok-border:#1565c0;
+  --task-hover:#0d2040;
+  /* Header */
+  --header-bg:#0a1628;
+  --tabs-bg:  #080e18;
+  --tab-active-bg:#0d1a2e;
+  /* Clock needle */
+  --needle:#42a5f5;
+  --needle-dot:#1565c0;
+  /* Scrollbar */
+  --scroll-thumb:#1e3a5f;
+}
+[data-theme="light"] {
+  --bg-root:       #e8f0fa;
+  --bg-surface:    #dce8f8;
+  --bg-card:       #f0f6ff;
+  --bg-input:      #ffffff;
+  --border:        #90b8e0;
+  --border-light:  #b0cce8;
+  --accent:        #1565c0;
+  --accent-bright: #1976d2;
+  --accent-glow:   #1565c0;
+  --text-primary:  #0a1f3d;
+  --text-secondary:#1a4a7a;
+  --text-muted:    #4a7aaa;
+  --text-dim:      #90b8d8;
+  --ok-bg:#dbeafe;   --ok-text:#1d4ed8;   --ok-border:#93c5fd;
+  --warn-bg:#fef3c7; --warn-text:#92400e; --warn-border:#fcd34d;
+  --danger-bg:#fee2e2; --danger-text:#991b1b; --danger-border:#fca5a5;
+  --ni-bg:#f1f5f9;  --ni-text:#64748b;  --ni-border:#cbd5e1;
+  --tok-bg:#eff6ff; --tok-border:#93c5fd;
+  --task-hover:#dbeafe;
+  --header-bg:#1565c0;
+  --tabs-bg:#1976d2;
+  --tab-active-bg:#f0f6ff;
+  --scroll-thumb:#90b8e0;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{min-height:100%;background:var(--bg-root);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--text-primary);transition:background 0.3s,color 0.3s;}
+
+/* ── LOADING ── */
+#loading-screen{position:fixed;inset:0;background:var(--bg-root);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:9999;}
+.loading-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent-glow);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:11px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;}
+
+/* ── LOGIN ── */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg-root);}
+.login-box{width:380px;background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:40px 36px;box-shadow:0 0 40px rgba(21,101,192,0.15);}
+.fab-logo{display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:28px;}
+.fab-emblem{width:64px;height:64px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 0 24px rgba(21,101,192,0.5);}
+.fab-badge{background:var(--accent);color:#fff;font-size:11px;font-weight:700;letter-spacing:2.5px;padding:5px 18px;border-radius:4px;text-transform:uppercase;}
+.login-title{font-size:18px;font-weight:600;color:var(--text-primary);text-align:center;}
+.login-sub{font-size:12px;color:var(--text-muted);margin-top:3px;text-align:center;}
+.login-field{margin-bottom:16px;margin-top:20px;}
+.login-label{display:block;font-size:11px;color:var(--text-muted);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px;}
+.login-input{width:100%;background:var(--bg-input);border:1px solid var(--border);border-radius:8px;padding:11px 14px;font-size:14px;color:var(--text-primary);outline:none;font-family:inherit;transition:border 0.2s;}
+.login-input:focus{border-color:var(--accent-glow);box-shadow:0 0 0 3px rgba(21,101,192,0.15);}
+.login-input::placeholder{color:var(--text-dim);}
+.login-btn{width:100%;background:var(--accent);border:none;border-radius:8px;color:#fff;font-size:14px;font-weight:700;padding:13px;cursor:pointer;letter-spacing:1px;font-family:inherit;transition:background 0.2s,box-shadow 0.2s;}
+.login-btn:hover{background:var(--accent-bright);box-shadow:0 0 16px rgba(21,101,192,0.4);}
+.login-btn:disabled{opacity:0.6;cursor:not-allowed;}
+.login-error{font-size:12px;color:var(--danger-text);text-align:center;margin-top:12px;min-height:18px;}
+.login-footer{font-size:11px;color:var(--text-dim);text-align:center;margin-top:20px;}
+
+/* ── MAIN ── */
+#main-screen{display:none;min-height:100vh;background:var(--bg-root);flex-direction:column;}
+#main-screen.visible{display:flex;}
+
+.mil-header{background:var(--header-bg);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);flex-shrink:0;}
+[data-theme="light"] .mil-header{color:#fff;}
+.header-left{display:flex;align-items:center;gap:14px;}
+.mil-emblem{width:38px;height:38px;border-radius:50%;background:var(--accent-bright);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+[data-theme="light"] .mil-emblem{background:rgba(255,255,255,0.2);}
+.mil-badge-sm{background:rgba(66,165,245,0.2);color:var(--accent-glow);font-size:10px;font-weight:700;letter-spacing:1.5px;padding:3px 10px;border-radius:4px;text-transform:uppercase;border:1px solid var(--border);}
+[data-theme="light"] .mil-badge-sm{background:rgba(255,255,255,0.2);color:#fff;border-color:rgba(255,255,255,0.3);}
+.mil-title{font-size:15px;font-weight:600;color:var(--text-primary);}
+[data-theme="light"] .mil-title{color:#fff;}
+.mil-sub{font-size:11px;color:var(--text-secondary);margin-top:1px;}
+[data-theme="light"] .mil-sub{color:rgba(255,255,255,0.75);}
+.header-right{display:flex;align-items:center;gap:12px;}
+.user-badge{font-size:11px;color:var(--accent-glow);font-family:monospace;background:rgba(21,101,192,0.15);padding:4px 10px;border-radius:4px;border:1px solid var(--border);}
+[data-theme="light"] .user-badge{background:rgba(255,255,255,0.2);color:#fff;border-color:rgba(255,255,255,0.3);}
+
+/* Dark/Light toggle */
+.theme-toggle{display:flex;align-items:center;gap:6px;background:rgba(21,101,192,0.2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;cursor:pointer;font-size:11px;color:var(--accent-glow);font-family:inherit;transition:all 0.2s;}
+[data-theme="light"] .theme-toggle{background:rgba(255,255,255,0.2);border-color:rgba(255,255,255,0.3);color:#fff;}
+.theme-toggle:hover{background:rgba(21,101,192,0.3);}
+.toggle-icon{font-size:14px;transition:transform 0.3s;}
+.logout-btn{font-size:11px;color:var(--text-muted);background:transparent;border:1px solid var(--border);padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+[data-theme="light"] .logout-btn{color:rgba(255,255,255,0.8);border-color:rgba(255,255,255,0.3);}
+.logout-btn:hover{color:var(--danger-text);border-color:var(--danger-border);}
+
+.tabs{display:flex;background:var(--tabs-bg);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;}
+.tab-btn{flex:1;min-width:120px;padding:11px 10px;font-size:11px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:var(--text-muted);background:transparent;border:none;border-bottom:3px solid transparent;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all 0.2s;}
+[data-theme="light"] .tab-btn{color:rgba(255,255,255,0.7);}
+.tab-btn.active{color:var(--accent-glow);border-bottom-color:var(--accent-bright);background:var(--tab-active-bg);}
+[data-theme="light"] .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-btn:hover:not(.active){color:var(--text-primary);background:rgba(21,101,192,0.1);}
+[data-theme="light"] .tab-btn:hover:not(.active){color:#fff;background:rgba(255,255,255,0.1);}
+
+.content{padding:16px 20px;flex:1;background:var(--bg-root);overflow-y:auto;}
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;}
+.kpi-card{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;text-align:center;position:relative;overflow:hidden;}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--border);}
+.kpi-card.ok::before{background:var(--ok-text);}
+.kpi-card.warn::before{background:var(--warn-text);}
+.kpi-card.danger::before{background:var(--danger-text);}
+.kpi-label{font-size:10px;color:var(--text-muted);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px;}
+.kpi-value{font-size:32px;font-weight:700;color:var(--text-primary);line-height:1;}
+.kpi-value.ok{color:var(--ok-text);}
+.kpi-value.warn{color:var(--warn-text);}
+.kpi-value.danger{color:var(--danger-text);}
+.kpi-sub{font-size:11px;color:var(--text-muted);margin-top:5px;}
+
+.section-title{font-size:11px;font-weight:700;color:var(--text-muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.section-title::before{content:'';width:3px;height:14px;background:var(--accent-bright);border-radius:2px;display:inline-block;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.col-block{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.pb-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.pb-label{font-size:12px;color:var(--text-secondary);min-width:82px;}
+.pb-track{flex:1;height:6px;background:var(--bg-input);border-radius:3px;overflow:hidden;}
+.pb-fill{height:100%;border-radius:3px;transition:width 0.4s;}
+.pb-fill.ok{background:var(--ok-text);}
+.pb-fill.warn{background:var(--warn-text);}
+.pb-fill.danger{background:var(--danger-text);}
+.pb-pct{font-size:11px;color:var(--text-muted);min-width:32px;text-align:right;font-family:monospace;}
+
+/* STATUS SELECT */
+.status-sel-base{font-size:10px;font-weight:600;padding:3px 7px;border-radius:4px;border:1px solid transparent;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;font-family:inherit;}
+.status-sel-base.concluida{background:var(--ok-bg);color:var(--ok-text);border-color:var(--ok-border);}
+.status-sel-base.andamento{background:var(--warn-bg);color:var(--warn-text);border-color:var(--warn-border);}
+.status-sel-base.atrasada{background:var(--danger-bg);color:var(--danger-text);border-color:var(--danger-border);}
+.status-sel-base.nao-iniciada{background:var(--ni-bg);color:var(--ni-text);border-color:var(--ni-border);}
+
+/* SECTOR CARDS */
+.sector-search-bar{display:flex;gap:10px;margin-bottom:16px;align-items:center;}
+.sector-search-input{flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:10px 16px;font-size:13px;color:var(--text-primary);outline:none;font-family:inherit;transition:border 0.2s;}
+.sector-search-input:focus{border-color:var(--accent-glow);box-shadow:0 0 0 3px rgba(21,101,192,0.1);}
+.sector-search-input::placeholder{color:var(--text-dim);}
+.sb-btn{font-size:11px;font-weight:600;color:var(--accent-glow);background:rgba(21,101,192,0.1);border:1px solid var(--border);padding:6px 14px;border-radius:6px;cursor:pointer;white-space:nowrap;font-family:inherit;transition:all 0.2s;}
+.sb-btn:hover{background:rgba(21,101,192,0.2);border-color:var(--accent);}
+[data-theme="light"] .sb-btn{color:var(--accent);background:var(--ok-bg);}
+
+.sectors-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px;}
+.sector-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color 0.2s,box-shadow 0.2s;}
+.sector-card:hover{border-color:var(--accent);box-shadow:0 0 20px rgba(21,101,192,0.1);}
+.sector-card-header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;transition:background 0.15s;}
+.sector-card-header:hover{background:rgba(21,101,192,0.07);}
+.sector-name{font-size:12px;font-weight:700;color:var(--text-primary);letter-spacing:0.5px;}
+.sector-meta{display:flex;align-items:center;gap:10px;}
+.sector-badge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;}
+.sector-badge.ok{background:var(--ok-bg);color:var(--ok-text);border:1px solid var(--ok-border);}
+.sector-badge.warn{background:var(--warn-bg);color:var(--warn-text);border:1px solid var(--warn-border);}
+.sector-badge.danger{background:var(--danger-bg);color:var(--danger-text);border:1px solid var(--danger-border);}
+.sector-chevron{font-size:11px;color:var(--text-muted);transition:transform 0.25s;}
+.sector-chevron.open{transform:rotate(180deg);}
+.sector-progress-bar{height:3px;background:var(--bg-input);}
+.sector-progress-fill{height:100%;transition:width 0.5s;}
+
+.sector-tasks{max-height:0;overflow:hidden;transition:max-height 0.35s ease;}
+.sector-tasks.open{max-height:9999px;}
+
+.atividade-label{font-size:10px;color:var(--accent-glow);padding:8px 16px 5px;font-family:monospace;letter-spacing:0.3px;border-bottom:1px solid var(--border-light);opacity:0.8;}
+
+/* TASK ROW */
+.task-block{border-bottom:1px solid var(--border-light);}
+.task-block:last-child{border-bottom:none;}
+.task-row{display:flex;align-items:flex-start;gap:10px;padding:9px 16px;cursor:pointer;transition:background 0.15s;}
+.task-row:hover{background:var(--task-hover);}
+.task-code{font-size:10px;color:var(--accent-glow);font-family:monospace;min-width:76px;flex-shrink:0;padding-top:1px;}
+.task-name{flex:1;font-size:12px;color:var(--text-secondary);line-height:1.45;}
+.task-prazo{font-size:10px;color:var(--text-muted);font-family:monospace;min-width:62px;text-align:center;flex-shrink:0;padding-top:2px;}
+.task-status-sel{font-size:10px;font-weight:600;padding:3px 7px;border-radius:4px;border:1px solid transparent;cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;font-family:inherit;min-width:88px;flex-shrink:0;}
+.task-status-sel.concluida{background:var(--ok-bg);color:var(--ok-text);border-color:var(--ok-border);}
+.task-status-sel.andamento{background:var(--warn-bg);color:var(--warn-text);border-color:var(--warn-border);}
+.task-status-sel.atrasada{background:var(--danger-bg);color:var(--danger-text);border-color:var(--danger-border);}
+.task-status-sel.nao-iniciada{background:var(--ni-bg);color:var(--ni-text);border-color:var(--ni-border);}
+.task-expand-icon{font-size:11px;color:var(--text-dim);flex-shrink:0;padding-top:2px;transition:transform 0.2s;}
+.task-expand-icon.open{transform:rotate(180deg);}
+
+/* OCORRÊNCIAS */
+.ocorrencias-panel{display:none;background:var(--bg-surface);border-top:1px solid var(--border-light);padding:10px 16px 12px 90px;}
+.ocorrencias-panel.open{display:block;}
+.ocorr-title{font-size:10px;font-weight:700;color:var(--accent-glow);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.ocorr-title::before{content:'📋';font-size:11px;}
+.ocorr-list{display:flex;flex-direction:column;gap:5px;margin-bottom:8px;}
+.ocorr-item{display:flex;align-items:flex-start;gap:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;padding:7px 10px;}
+.ocorr-dot{width:6px;height:6px;border-radius:50%;background:var(--accent-bright);flex-shrink:0;margin-top:4px;}
+.ocorr-text{flex:1;font-size:11px;color:var(--text-secondary);line-height:1.5;}
+.ocorr-date{font-size:10px;color:var(--text-muted);font-family:monospace;white-space:nowrap;margin-top:1px;}
+.ocorr-del{background:transparent;border:none;cursor:pointer;color:var(--text-dim);font-size:14px;padding:0 2px;line-height:1;flex-shrink:0;}
+.ocorr-del:hover{color:var(--danger-text);}
+.ocorr-form{display:flex;gap:8px;align-items:center;}
+.ocorr-input{flex:1;background:var(--bg-input);border:1px solid var(--border);border-radius:6px;padding:7px 12px;font-size:12px;color:var(--text-primary);outline:none;font-family:inherit;transition:border 0.2s;}
+.ocorr-input:focus{border-color:var(--accent-glow);}
+.ocorr-input::placeholder{color:var(--text-dim);}
+.ocorr-save{background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:11px;font-weight:600;padding:7px 14px;cursor:pointer;font-family:inherit;white-space:nowrap;}
+.ocorr-save:hover{background:var(--accent-bright);}
+.ocorr-empty{font-size:11px;color:var(--text-dim);font-style:italic;margin-bottom:8px;}
+
+/* KPI GERAL */
+.kpi-total-tasks{font-size:11px;color:var(--text-muted);text-align:right;margin-bottom:10px;}
+.kpi-total-tasks span{color:var(--accent-glow);font-weight:700;}
+
+/* CLOCKS */
+.clocks-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.clocks-legend{display:flex;gap:16px;align-items:center;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text-muted);}
+.legend-dot{width:10px;height:10px;border-radius:50%;}
+.clocks-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:14px;}
+.clock-card{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:18px 14px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;transition:border-color 0.2s;}
+.clock-card:hover{border-color:var(--accent);}
+.clock-sector-name{font-size:11px;font-weight:700;color:var(--text-secondary);letter-spacing:1px;text-transform:uppercase;text-align:center;}
+.clock-wrap{position:relative;width:140px;height:140px;}
+.clock-canvas{width:140px;height:140px;display:block;}
+.clock-center-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;}
+.clock-pct{font-size:22px;font-weight:700;line-height:1;}
+.clock-label{font-size:10px;color:var(--text-muted);margin-top:2px;letter-spacing:0.5px;text-transform:uppercase;}
+.clock-stats{width:100%;display:flex;justify-content:space-around;border-top:1px solid var(--border-light);padding-top:10px;}
+.clock-stat{text-align:center;}
+.clock-stat-val{font-size:14px;font-weight:600;color:var(--text-secondary);}
+.clock-stat-lbl{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-top:1px;}
+.clocks-summary{margin-bottom:16px;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 20px;display:flex;align-items:center;gap:24px;flex-wrap:wrap;}
+.summary-big{font-size:34px;font-weight:700;color:var(--ok-text);line-height:1;}
+.summary-label{font-size:11px;color:var(--text-muted);margin-top:3px;}
+.summary-divider{width:1px;height:40px;background:var(--border);flex-shrink:0;}
+.summary-item{text-align:center;}
+.summary-item-val{font-size:16px;font-weight:700;color:var(--text-secondary);}
+.summary-item-lbl{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;}
+
+/* ALERTAS */
+.alert-red{background:var(--danger-bg);border:1px solid var(--danger-border);border-radius:10px;padding:12px 16px;border-left:4px solid var(--danger-text);}
+.alert-warn{background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:10px;padding:12px 16px;border-left:4px solid var(--warn-text);}
+.alert-text-red{font-size:13px;color:var(--danger-text);line-height:1.6;}
+.alert-text-warn{font-size:13px;color:var(--warn-text);line-height:1.6;}
+.alert-code{font-family:monospace;font-size:10px;color:var(--text-muted);margin-top:5px;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg-root);}
+::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:3px;}
+
+@media(max-width:700px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .two-col{grid-template-columns:1fr;}
+  .sectors-grid{grid-template-columns:1fr;}
+  .clocks-grid{grid-template-columns:repeat(2,1fr);}
+  .mil-title{font-size:13px;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loading-screen">
+  <div class="fab-emblem" style="width:56px;height:56px;font-size:24px;">✈</div>
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Autenticando...</div>
+</div>
+
+<!-- LOGIN -->
+<div id="login-screen" style="display:none;">
+  <div class="login-box">
+    <div class="fab-logo">
+      <div class="fab-emblem">✈</div>
+      <div class="fab-badge">IV COMAR — FAB</div>
+      <div class="login-title">Centro de Controle Estratégico</div>
+      <div class="login-sub">Programa de Trabalho Anual 2026</div>
+    </div>
+    <div class="login-field">
+      <label class="login-label">Usuário</label>
+      <input class="login-input" id="login-user" type="text" placeholder="Identificação de acesso" autocomplete="off"/>
+    </div>
+    <div class="login-field" style="margin-top:0">
+      <label class="login-label">Senha</label>
+      <input class="login-input" id="login-pass" type="password" placeholder="••••••••" autocomplete="off"/>
+    </div>
+    <button class="login-btn" id="login-btn">ACESSAR SISTEMA</button>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-footer">COMPREP · Força Aérea Brasileira · Acesso restrito</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="main-screen">
+  <div class="mil-header">
+    <div class="header-left">
+      <div class="mil-emblem">✈</div>
+      <span class="mil-badge-sm">IV COMAR</span>
+      <div>
+        <div class="mil-title">Centro de Controle Estratégico — PTA 2026</div>
+        <div class="mil-sub">Quarto Comando Aéreo Regional · Força Aérea Brasileira</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="user-badge" id="user-badge">USR: —</span>
+      <button class="theme-toggle" id="theme-toggle" title="Alternar tema">
+        <span class="toggle-icon" id="toggle-icon">🌙</span>
+        <span id="toggle-label">DARK</span>
+      </button>
+      <button class="logout-btn" id="logout-btn">SAIR</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="visao-geral">Visão Geral</button>
+    <button class="tab-btn" data-tab="setores">Tarefas por Setor</button>
+    <button class="tab-btn" data-tab="relogios">Indicadores Visuais</button>
+    <button class="tab-btn" data-tab="alertas">Alertas</button>
+  </div>
+
+  <div class="content">
+    <!-- Access level banner -->
+    <div id="access-banner" style="display:none;background:var(--warn-bg);border:1px solid var(--warn-border);border-radius:8px;padding:10px 16px;margin-bottom:14px;font-size:12px;color:var(--warn-text);align-items:center;gap:8px;">
+      <span style="font-size:16px;">🔐</span>
+      <span id="access-banner-text"></span>
+    </div>
+
+    <!-- VISÃO GERAL -->
+    <div id="panel-visao-geral" class="panel active">
+      <div class="kpi-total-tasks">Total de tarefas no PTA: <span id="kpi-total-tasks">—</span> | Concluídas: <span id="kpi-total-conc">—</span></div>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Total Atividades</div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-sub">macroprocessos</div></div>
+        <div class="kpi-card ok"><div class="kpi-label">Concluídas</div><div class="kpi-value ok" id="kpi-conc">—</div><div class="kpi-sub" id="kpi-conc-pct">—</div></div>
+        <div class="kpi-card warn"><div class="kpi-label">Em andamento</div><div class="kpi-value warn" id="kpi-and">—</div><div class="kpi-sub" id="kpi-and-pct">—</div></div>
+        <div class="kpi-card danger"><div class="kpi-label">Em atraso / Crítico</div><div class="kpi-value danger" id="kpi-atr">—</div><div class="kpi-sub" id="kpi-atr-pct">—</div></div>
+      </div>
+      <div class="two-col">
+        <div class="col-block">
+          <div class="section-title">Execução por setor</div>
+          <div id="area-bars"></div>
+        </div>
+        <div class="col-block">
+          <div class="section-title">Ocorrências registradas</div>
+          <div id="ocorr-summary" style="font-size:13px;color:var(--text-dim);line-height:1.8;">Nenhuma ocorrência registrada.<br>Use o ▼ em cada tarefa para registrar.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAREFAS POR SETOR -->
+    <div id="panel-setores" class="panel">
+      <div class="sector-search-bar">
+        <input class="sector-search-input" id="sector-search" placeholder="🔍  Buscar por código ou nome da tarefa..."/>
+        <button class="sb-btn" onclick="expandAll()">Expandir todos</button>
+        <button class="sb-btn" onclick="collapseAll()">Recolher todos</button>
+      </div>
+      <div class="sectors-grid" id="sectors-grid"></div>
+    </div>
+
+    <!-- RELÓGIOS -->
+    <div id="panel-relogios" class="panel">
+      <div class="clocks-header">
+        <div class="section-title" style="margin-bottom:0;border:none;padding:0;">Progresso por setor</div>
+        <div class="clocks-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#42a5f5;"></div>Concluída</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;"></div>Andamento</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#ef4444;"></div>Atrasada</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#1e3a5f;"></div>Não iniciada</div>
+        </div>
+      </div>
+      <div class="clocks-summary" id="clocks-summary"></div>
+      <div class="clocks-grid" id="clocks-grid"></div>
+    </div>
+
+    <!-- ALERTAS -->
+    <div id="panel-alertas" class="panel">
+      <div class="section-title">Alertas críticos</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;">
+        <div class="alert-red"><div class="alert-text-red"><strong>Projeto SISI:</strong> R$ 723k pendentes de empenho para dez/2026. Risco de perda orçamentária.</div><div class="alert-code">26SAT005–011 · CAOP/SAT · PRIORIDADE ALTA</div></div>
+        <div class="alert-red"><div class="alert-text-red"><strong>Auditório IV COMAR:</strong> emenda parlamentar (R$ 1,34M) sem confirmação. Processo licitatório bloqueado.</div><div class="alert-code">26SAG004–005 · CADM/SAGS · DEPENDÊNCIA EXTERNA</div></div>
+      </div>
+      <div class="section-title">Avisos de atenção</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="alert-warn"><div class="alert-text-warn"><strong>Plano de Integridade CPCA:</strong> prazo jun/2026. Formalizar plano de comunicação até maio.</div><div class="alert-code">P240402.PRE00.S261803 · CPLG/SGOV + CPCA</div></div>
+        <div class="alert-warn"><div class="alert-text-warn"><strong>QTS Treinamento Físico (26SEF001):</strong> verificar publicação mensal na página do IV COMAR.</div><div class="alert-code">P241609.PRE00.S262401 · CADM/SEF</div></div>
+        <div class="alert-warn"><div class="alert-text-warn"><strong>Notas de Empenho (26SAE014):</strong> status atrasado — verificar com SAE/CADM imediatamente.</div><div class="alert-code">26SAE014 · SAE/CADM</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ═══ SUPABASE ═══ */
+const SUPABASE_URL      = '%%SUPABASE_URL%%';
+const SUPABASE_ANON_KEY = '%%SUPABASE_ANON_KEY%%';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ═══ THEME ═══ */
+let isDark = true;
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  document.getElementById('toggle-icon').textContent = isDark ? '🌙' : '☀️';
+  document.getElementById('toggle-label').textContent = isDark ? 'DARK' : 'LIGHT';
+  if (document.getElementById('panel-relogios').classList.contains('active')) renderClocks();
+});
+
+/* ═══ AUTH ═══ */
+let currentUser = null;
+
+document.getElementById('login-btn').addEventListener('click', doLogin);
+['login-user','login-pass'].forEach(id =>
+  document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); })
+);
+document.getElementById('logout-btn').addEventListener('click', doLogout);
+
+async function doLogin() {
+  const u = document.getElementById('login-user').value.trim().toUpperCase();
+  const p = document.getElementById('login-pass').value.trim();
+  if (!u || !p) return;
+  const btn = document.getElementById('login-btn');
+  btn.textContent = 'AGUARDE...'; btn.disabled = true;
+  const email = u.toLowerCase() + '@ivcomar.fab';
+  const { error } = await sb.auth.signInWithPassword({ email, password: p });
+  btn.textContent = 'ACESSAR SISTEMA'; btn.disabled = false;
+  if (error) {
+    document.getElementById('login-error').textContent = 'Usuário ou senha incorretos. Acesso negado.';
+    document.getElementById('login-pass').value = '';
+  }
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+}
+
+function canEdit(sectorId) {
+  if (!currentUser) return false;
+  if (currentUser.sectorId === null) return true;
+  return currentUser.sectorId === sectorId;
+}
+
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (session?.user) {
+    const meta = session.user.user_metadata;
+    currentUser = { user: meta.display_name, sectorId: meta.sector_id ?? null };
+    await carregarDados();
+    mostrarPrincipal();
+  } else {
+    currentUser = null;
+    mostrarLogin();
+  }
+});
+
+async function carregarDados() {
+  // Reset in-memory state to defaults from SECTORS
+  SECTORS.forEach(s => s.tasks.forEach(t => { ocorrencias[t.code] = []; }));
+
+  const [{ data: statuses }, { data: ocorrs }] = await Promise.all([
+    sb.from('task_status').select('task_code,status'),
+    sb.from('occurrences').select('*').order('created_at', { ascending: true })
+  ]);
+
+  if (statuses) {
+    const map = Object.fromEntries(statuses.map(s => [s.task_code, s.status]));
+    SECTORS.forEach(s => s.tasks.forEach(t => { if (map[t.code]) t.status = map[t.code]; }));
+  }
+  if (ocorrs) {
+    ocorrs.forEach(o => {
+      if (!ocorrencias[o.task_code]) ocorrencias[o.task_code] = [];
+      ocorrencias[o.task_code].push({ id: o.id, text: o.text, date: o.date });
+    });
+  }
+}
+
+function mostrarPrincipal() {
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-screen').classList.add('visible');
+  const badge = document.getElementById('user-badge');
+  badge.textContent = 'USR: ' + currentUser.user + (currentUser.sectorId ? ' · ' + currentUser.sectorId : ' · ADMIN');
+  badge.style.borderColor = currentUser.sectorId ? 'var(--warn-border)' : 'var(--ok-border)';
+  badge.style.color       = currentUser.sectorId ? 'var(--warn-text)'   : 'var(--ok-text)';
+  updateKPIs();
+  const banner = document.getElementById('access-banner');
+  if (currentUser.sectorId) {
+    banner.style.display = 'flex';
+    document.getElementById('access-banner-text').textContent =
+      `Acesso restrito: você está logado como ${currentUser.user} (${currentUser.sectorId}). Pode registrar ocorrências e alterar status apenas nas tarefas do setor ${currentUser.sectorId}. Os demais setores são somente leitura.`;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelector('[data-tab="setores"]').classList.add('active');
+    document.getElementById('panel-setores').classList.add('active');
+    renderSectors('');
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+function mostrarLogin() {
+  document.getElementById('loading-screen').style.display = 'none';
+  document.getElementById('main-screen').classList.remove('visible');
+  document.getElementById('login-screen').style.display = 'flex';
+  ['login-user','login-pass'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('login-error').textContent = '';
+  document.getElementById('access-banner').style.display = 'none';
+}
+
+/* ═══ TABS ═══ */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'relogios') renderClocks();
+    if (btn.dataset.tab === 'setores') renderSectors('');
+  });
+});
+
+/* ═══ DATA ═══ */
+const statusOptions = ['andamento','concluida','atrasada','nao-iniciada'];
+const statusLabels  = {andamento:'Em andamento', concluida:'Concluída', atrasada:'Atrasada', 'nao-iniciada':'Não iniciada'};
+
+const ocorrencias = {};
+
+const SECTORS = [
+  { id:'ACS', name:'ACS — Comunicação Social e Cerimonial',
+    atividade:'P261001.PRE05.A260101 — Realização da comunicação social institucional',
+    tasks:[
+      {code:'26ACS001', name:'Gestão de pessoal e estrutura física da Assessoria de Comunicação Social', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ACS002', name:'Aquisição de material de uso institucional', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ACS003', name:'Gestão histórica', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ACS004', name:'Coordenar o Cerimonial das Formaturas da GUARNAE-SP', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ACS005', name:'Coordenar ações nos eventos de representações do CMTAER no âmbito da GUARNAE-SP', prazo:'Jan–Dez', status:'andamento'},
+    ]},
+  { id:'AAJ', name:'AAJ — Assessoria de Apoio Jurídico',
+    atividade:'P260701.PRE05.A260101 — Realização da consultoria e assessoramento jurídico',
+    tasks:[
+      {code:'26AAJ001', name:'Propor temas, palestrantes, convidados e local para o Seminário', prazo:'Mar/2026', status:'concluida'},
+      {code:'26AAJ002', name:'Elaboração de NS (Seminário de Direito e Justiça Militar)', prazo:'Abr/2026', status:'concluida'},
+      {code:'26AAJ003', name:'Emissão de certificados do Seminário', prazo:'Mai/2026', status:'concluida'},
+      {code:'26AAJ004', name:'Assessorar o Comandante em assuntos de natureza jurídica', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AAJ005', name:'Apoiar OM subordinadas em IPM e APF', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AAJ006', name:'Planejar, orientar e supervisionar o Oficial de Sobreaviso Jurídico (OSJ)', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AAJ007', name:'Elaborar Estudos Preliminares para defesa da União pela AGU / MPF', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AAJ008', name:'Instaurar ou assessorar Conselho de Disciplina', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AAJ009', name:'Assessorar trabalhos de Inquérito Policial Militar (IPM)', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AAJ010', name:'Assessorar apuração de transgressão disciplinar', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AAJ011', name:'Assessorar procedimentos disciplinares de civis', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AAJ012', name:'Assessorar sindicâncias', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AAJ013', name:'Assessorar procedimentos relativos a armas de fogo', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AAJ014', name:'Gerenciar demandas relativas ao Complexo Prisional', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AAJ015', name:'Apoiar organização dos Seminários de Justiça Militar do IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AAJ016', name:'Elaborar listas de oficiais para sorteio do Conselho Permanente de Justiça', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AAJ017', name:'Coordenar Estágio de Treinamento para OSJ da GUARNAE-SP', prazo:'Jan–Dez', status:'andamento'},
+    ]},
+  { id:'ARI', name:'ARI — Assessoria de Relações Institucionais',
+    atividade:'P260502.PRE05.A260101 — Realização das atividades de relações institucionais',
+    tasks:[
+      {code:'26ARI001', name:'Analisar e propor indicação para Ordem do Mérito Aeronáutico e Medalhas Santos Dumont / Bartolomeu de Gusmão', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ARI002', name:'Realizar relacionamento institucional no âmbito do IV COMAR em coordenação com a ASPAER', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ARI003', name:'Acompanhar emendas parlamentares de interesse do IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ARI004', name:'Atuar junto aos órgãos do Executivo, Legislativo e Judiciário em SP e MS', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ARI005', name:'Identificar oportunidades de relacionamento com públicos de interesse do IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ARI006', name:'Buscar empresas parceiras para eventos institucionais do IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ARI007', name:'Gerenciar solicitações de pedidos externos junto ao IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ARI008', name:'Manter dados de contatos institucionais atualizados no SISPIC', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ARI009', name:'Encaminhar periodicamente à ASPAER o relatório de atividade de relações institucionais', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ARI010', name:'Coordenar as atividades do PROFESP no âmbito do IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+    ]},
+  { id:'AI', name:'AI — Assessoria de Inteligência',
+    atividade:'P261801.PRE05.A260101 — Realização das atividades de inteligência',
+    tasks:[
+      {code:'26AIN001', name:'Identificar e compreender as Necessidades constantes no PCA 505-1', prazo:'Jan/2026', status:'concluida'},
+      {code:'26AIN002', name:'Implantar as Necessidades previstas no PCA 505-1 conforme calendário do COMPREP', prazo:'Conforme COMPREP', status:'andamento'},
+      {code:'26AIN003', name:'Difundir Conhecimentos de Inteligência aos Elos do SINTAER', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AIN004', name:'Acompanhar Medidas Administrativas determinadas pelo Comandante no PSO', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AIN005', name:'Controlar Credenciais de Segurança do IV COMAR e OM apoiadas', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AIN006', name:'Enviar Relatório de Consultas ao Sistema INFOSEG', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AIN007', name:'Confeccionar minuta de Relatório SPADS (desclassificação e classificação de documentos)', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AIN008', name:'Manter o controle dos Materiais Controlados no âmbito do IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AIN009', name:'Capacitar os Analistas de Inteligência do IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AIN010', name:'Apoiar Concursos e Seleções do COMAER no âmbito do IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AIN011', name:'Conduzir o Plano de Trabalho Anual e de Educação Continuada do IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AIN012', name:'Controlar as visitas ao IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AIN013', name:'Aprovar o Plano de Reunião do IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26AIN014', name:'Integrar com as Agências de Inteligência dos demais Órgãos do SISBIN', prazo:'Jan–Dez', status:'andamento'},
+    ]},
+  { id:'ACP', name:'ACP — Assessoria do Círculo de Praças',
+    atividade:'P261606.PRE05.A260101 — Acompanhamento das atividades do círculo de praças',
+    tasks:[
+      {code:'26ACP001', name:'Atuar como tutor no PAAS — Programa de Avaliação e Acompanhamento de Soldados', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ACP002', name:'Acompanhar preparo físico dos militares com graus ABN ou NOB no TACF', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ACP003', name:'Atuar como tutor das praças com queda de desempenho técnico-profissional', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ACP004', name:'Difundir periodicamente as orientações do Comandante ao efetivo de praças da GUARNAE', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ACP005', name:'Colaborar com coordenação de palestras para o corpo de graduados da GUARNAE', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ACP006', name:'Participar como elo consultivo do PFV em sinergia com as comissões das OM da GUARNAE', prazo:'Jan–Dez', status:'andamento'},
+    ]},
+  { id:'AREL', name:'AREL — Assessoria Religiosa',
+    atividade:'P261606.PRE05.A260102 — Realização das atividades religiosas',
+    tasks:[
+      {code:'26ARE001', name:'Manter Superiores Militares, Arcebispo Militar e Autoridades Religiosas a par das atividades', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ARE002', name:'Propor, coordenar e executar serviços de assistência espiritual, religiosa e moral dos militares, civis e familiares', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ARE003', name:'Cooperar nas atividades de Assistência Social', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26ARE004', name:'Manter contato permanente com as autoridades religiosas locais conforme orientações do Arcebispo Ordinário Militar', prazo:'Jan–Dez', status:'andamento'},
+    ]},
+  { id:'SAE', name:'SAE — Subcoordenadoria de Execução Orçamentária',
+    atividade:'P260612.PRE05.A260101 — Acompanhamento da execução orçamentária',
+    tasks:[
+      {code:'26SAE001', name:'Confeccionar minuta de Ofício de monitoramento da execução orçamentária', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE002', name:'Enviar o Demonstrativo Gerencial de Custos (DGC)', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE003', name:'Acompanhar a captação de emendas parlamentares', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE004', name:'Acompanhar mensalmente as emendas parlamentares', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE005', name:'Acompanhar mensalmente saldos de UG desativados', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE006', name:'Acompanhar compatibilização de saldos entre SILOMS e SIAFI', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE007', name:'Realizar o planejamento orçamentário', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE008', name:'Propor atualização do PTA referente às atividades da SCAO', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE009', name:'Realizar o Planejamento e Gerenciamento de Contratações (PGC)', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE010', name:'Realizar o Plano Diretor de Tecnologia da Informação e Comunicação (PDTIC)', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE011', name:'Registrar as necessidades em calendário de OM apoiadora', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE012', name:'Elaborar o processo licitatório', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE013', name:'Conduzir o processo licitatório', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE014', name:'Emitir as Notas de Empenho', prazo:'Jan–Dez', status:'atrasada'},
+      {code:'26SAE015', name:'Acompanhar o teto de diárias e compra de passagens aéreas', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE016', name:'Acompanhar o encerramento de comissionamentos', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE017', name:'Inscrever os saldos de empenho em Restos a Pagar', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE018', name:'Atualizar anualmente a NPA da CADM', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE019', name:'Conferir as FACDP', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAE020', name:'Aquisição de Material de Consumo de expediente para Apoio à Atividade Administrativa', prazo:'Mai', status:'nao-iniciada'},
+      {code:'26SAE021', name:'Aquisição de Materiais relativos a homenagens', prazo:'Mai', status:'nao-iniciada'},
+      {code:'26SAE022', name:'Aquisição de materiais para instalação de aparelhos de ar condicionado', prazo:'Mai', status:'nao-iniciada'},
+      {code:'26SAE023', name:'Aquisição de materiais de manutenção para apoio à atividade administrativa', prazo:'Mai', status:'nao-iniciada'},
+      {code:'26SAE024', name:'Serviço de manutenção de bens imóveis', prazo:'Jun', status:'nao-iniciada'},
+      {code:'26SAE025', name:'Aquisição de materiais de manutenção de bens imóveis', prazo:'Abr', status:'nao-iniciada'},
+      {code:'26SAE026', name:'Contratação de Serviços para Apoio à Atividade Administrativa', prazo:'Jun', status:'nao-iniciada'},
+    ]},
+  { id:'SAGS', name:'SAGS — Subcoordenadoria de Gestão e Suporte',
+    atividade:'P261306.PRE05.A260101 — Acompanhamento das atividades de engenharia e infraestrutura',
+    tasks:[
+      {code:'26SAG001', name:'Acompanhar as Ações do Plano de Internalização de Manutenção Predial das OM Subordinadas', prazo:'Dez/2026', status:'andamento'},
+      {code:'26SAG002', name:'Elaborar 1º Relatório das Ações previstas para internalização dos serviços de manutenção', prazo:'Mai/2026', status:'andamento'},
+      {code:'26SAG003', name:'Elaborar 2º Relatório das Ações previstas para internalização dos serviços de manutenção', prazo:'Out/2026', status:'nao-iniciada'},
+      {code:'26SAG004', name:'Solicitar recursos para auditório — captação de emenda parlamentar', prazo:'Dez/2026', status:'atrasada'},
+      {code:'26SAG005', name:'Processo licitatório do auditório (se atendido com emenda parlamentar)', prazo:'Dez/2026', status:'nao-iniciada'},
+      {code:'26SAG006', name:'Elaborar o Plano de Manutenção Predial (PMP) do IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAG007', name:'Supervisionar e executar o PMP do IV COMAR e das OM subordinadas', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAG008', name:'Acompanhar a captação de emendas parlamentares', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAG009', name:'Propor atualização do PTA referente às atividades da SAGS', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAG010', name:'Acompanhar o PTA de Infraestrutura das OM subordinadas', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAG011', name:'Realizar o Planejamento de Infraestrutura (PPI)', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAG012', name:'Acompanhar obras e serviços de engenharia no âmbito do COMPREP', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAG013', name:'Enviar faturas de energia elétrica do IV COMAR e OM subordinadas', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAG014', name:'Acompanhar as ações de Eficiência Energética', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAG015', name:'Monitorar e direcionar atualização do Plano Diretor do IV COMAR e das OM subordinadas', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAG016', name:'Supervisionar tombos e permutas de área patrimonial das OM subordinadas', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAG017', name:'Fiscalizar obras e serviços de engenharia do IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAG018', name:'Apoiar fiscalização ou recebimento de obras e serviços das OM subordinadas', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAG019', name:'Elaborar documentos técnicos', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAG020', name:'Acompanhar ações de prevenção de acidentes e doenças decorrentes do trabalho (CIPA)', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAG021', name:'Acompanhar atividades de prevenção, salvamento e combate a incêndio / brigada', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAG022', name:'Supervisionar Indicadores de Saúde, TI e Transportes de Superfície', prazo:'Jan–Dez', status:'andamento'},
+    ]},
+  { id:'SAT', name:'SAT — Subcoordenadoria de Atividades Terrestres',
+    atividade:'P261202.PRE05.A260101 — Acompanhamento das atividades terrestres e Projeto SISI',
+    tasks:[
+      {code:'26SAT001', name:'Publicação da comissão SISI', prazo:'01–30/Jun', status:'nao-iniciada'},
+      {code:'26SAT002', name:'Reunião para definir as diretrizes do Projeto SISI', prazo:'01–31/Jul', status:'nao-iniciada'},
+      {code:'26SAT003', name:'Elaborar e encaminhar o Projeto SISI para aprovação do Presidente da CSOD', prazo:'03/Ago–15/Nov', status:'nao-iniciada'},
+      {code:'26SAT004', name:'Enviar o Projeto SISI ao COMPREP', prazo:'16–19/Nov', status:'nao-iniciada'},
+      {code:'26SAT005', name:'Aquisição de materiais de consumo SISI — ND 339030.26 — R$ 103.232,20', prazo:'Dez/2026', status:'nao-iniciada'},
+      {code:'26SAT006', name:'Contratação de serviços SISI — ND 339039.16 — R$ 113.214,83', prazo:'Dez/2026', status:'nao-iniciada'},
+      {code:'26SAT007', name:'Aquisição mat. permanente SISI — Aparelhos de comunicação ND 449052.06 — R$ 37.500', prazo:'Dez/2026', status:'nao-iniciada'},
+      {code:'26SAT008', name:'Aquisição mat. permanente SISI — Aparelhos domésticos ND 449052.12 — R$ 45.200', prazo:'Dez/2026', status:'nao-iniciada'},
+      {code:'26SAT009', name:'Aquisição mat. permanente SISI — Equipamentos diversos ND 449052.34 — R$ 321.019', prazo:'Dez/2026', status:'nao-iniciada'},
+      {code:'26SAT010', name:'Aquisição mat. permanente SISI — Material de TIC ND 449052.35 — R$ 64.000', prazo:'Dez/2026', status:'nao-iniciada'},
+      {code:'26SAT011', name:'Aquisição mat. permanente SISI — Ativos de rede ND 449052.37 — R$ 33.000', prazo:'Dez/2026', status:'nao-iniciada'},
+      {code:'26SAT012', name:'Realizar 1ª vistoria das áreas sensíveis — prevenção e detecção de tráfico de drogas', prazo:'Jul/2026', status:'nao-iniciada'},
+      {code:'26SAT013', name:'Realizar 2ª vistoria das áreas sensíveis — prevenção e detecção de tráfico de drogas', prazo:'Dez/2026', status:'nao-iniciada'},
+      {code:'26SAT014', name:'Acompanhar o cumprimento do programa de elevação da mentalidade de segurança', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAT015', name:'Acompanhar preparação dos militares nos estágios de segurança e defesa da GUARNAE-SP', prazo:'02/Fev–30/Out', status:'andamento'},
+      {code:'26SAT016', name:'Acompanhar o percentual de cumprimento do PAOP', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAT017', name:'Confeccionar minuta com demandas de capacidades das Bases Aéreas ao COMPREP', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAT018', name:'Coordenar participação de militares da FAB em ativação de Comandos Conjuntos', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAT019', name:'Participar de Missões Conjuntas que exijam emprego de meios de Força Aérea', prazo:'Jan–Dez', status:'andamento'},
+    ]},
+  { id:'SAA', name:'SAA — Subcoordenadoria de Atividades Aéreas',
+    atividade:'P260601.PRE05.A260101 — Acompanhamento das atividades aéreas',
+    tasks:[
+      {code:'26SAA001', name:'Compilar demandas das Bases e remeter lista única ao COMPREP (até último dia útil de abril)', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAA002', name:'Elaborar as propostas de FIEX ao COMPREP', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAA003', name:'Coordenar os desfiles aéreos', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAA004', name:'Coordenar o apoio aéreo', prazo:'Jan–Dez', status:'andamento'},
+    ]},
+  { id:'SPL', name:'SPL — Subcoordenadoria de Planejamento',
+    atividade:'P260401.PRE05.A260101 — Realização das atividades de planejamento institucional',
+    tasks:[
+      {code:'26SPL001', name:'Identificar os processos realizados pelo IV COMAR', prazo:'Jan/2026', status:'concluida'},
+      {code:'26SPL002', name:'Modelar os processos realizados pelo IV COMAR', prazo:'Fev/2026', status:'concluida'},
+      {code:'26SPL003', name:'Publicar os processos do IV COMAR no portal da Intraer', prazo:'Jul/2026', status:'andamento'},
+      {code:'26SPL004', name:'Elaborar e supervisionar a execução do PTA do IV COMAR alinhado ao PLANSET e PEMAER', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SPL005', name:'Supervisionar elaboração e cumprimento dos PTA das OM subordinadas', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SPL006', name:'Coordenar elaboração da Matriz SWOT do IV COMAR e compilar as das OM subordinadas', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SPL007', name:'Coordenar o processo de Gestão Documental conforme NOPREP/LEG/09C', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SPL008', name:'Coordenar o mapeamento de processos', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SPL009', name:'Acompanhar cursos dos militares de Governança do IV COMAR e OM subordinadas', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SPL010', name:'Acompanhar metas e indicadores das OM subordinadas', prazo:'Jan–Dez', status:'andamento'},
+    ]},
+  { id:'SGOV', name:'SGOV — Subcoordenadoria de Governança',
+    atividade:'P260401.PRE05.A260102 — Realização das atividades de governança institucional',
+    tasks:[
+      {code:'26SGO001', name:'Implementar Plano de Comunicação e Treinamento de integridade (PROINT-FAB / CPCA)', prazo:'Jun/2026', status:'andamento'},
+      {code:'26SGO002', name:'Elaborar Plano de Ação 5W2H para correções das não-conformidades 5S nas OM Subordinadas', prazo:'Dez/2026', status:'andamento'},
+      {code:'26SGO003', name:'Implementar Plano de Ação para melhoria dos índices de 5S nas OM Subordinadas', prazo:'Dez/2026', status:'andamento'},
+      {code:'26SGO004', name:'Realizar inspeção interna anual de conformidades do Programa 5S no âmbito do IV COMAR', prazo:'Dez/2026', status:'nao-iniciada'},
+      {code:'26SGO005', name:'Gerenciar o processo de inspeção das OM subordinadas de acordo com a NOPREP/ADM/12', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SGO006', name:'Supervisionar ações da comissão de Gestão do Programa de Formação e Fortalecimento de Valores (PFV)', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SGO007', name:'Elaborar apresentação do IV COMAR para RAES e compilar e revisar as das OM subordinadas', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SGO008', name:'Elaborar e atualizar o Plano de Gestão de Risco do IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SGO009', name:'Supervisionar elaboração e atualização do Plano de Gestão de Riscos das OM subordinadas', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SGO010', name:'Monitorar os Planos de Ação no GPAer', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SGO011', name:'Acompanhar as atividades dos Programas Institucionais', prazo:'Jan–Dez', status:'andamento'},
+    ]},
+  { id:'CPCA', name:'CPCA — Comissão de Prevenção e Combate ao Assédio',
+    atividade:'P240402.PRE00.S261803 — Medidas de tratamento dos riscos à integridade (DCA 16-3)',
+    tasks:[
+      {code:'26CPC001', name:'Fortalecer a proteção ao denunciante — assédios moral e sexual — assegurar que a vítima não sofra retaliação', prazo:'Jun/2026', status:'andamento'},
+      {code:'26CPC002', name:'Fomentar canal permanente de acolhimento, escuta e orientação às pessoas afetadas por assédio (CPCA)', prazo:'Jun/2026', status:'andamento'},
+    ]},
+  { id:'SEF', name:'SEF — Seção de Educação Física',
+    atividade:'P241609.PRE00.S262401/02 — Incrementar TFPM e melhorar desempenho no TACF',
+    tasks:[
+      {code:'26SEF001', name:'Elaborar o QTS de Treinamento Físico Militar e disponibilizar na página do IV COMAR (mensal)', prazo:'Mensal', status:'andamento'},
+      {code:'26SEF002', name:'Promover a Taça Eficiência do IV COMAR', prazo:'Mai/2026', status:'andamento'},
+      {code:'26SEF003', name:'Promover treinamentos das equipes para a competição dos Jogos da Intendência', prazo:'Ago/2026', status:'nao-iniciada'},
+      {code:'26SEF004', name:'Fomentar a participação do efetivo na Corrida Santos Dumont', prazo:'Out/2026', status:'nao-iniciada'},
+      {code:'26SEF005', name:'Realizar palestras de conscientização sobre atividade física e boa alimentação', prazo:'Dez/2026', status:'nao-iniciada'},
+    ]},
+  { id:'PFV', name:'PFV — Programa de Fortalecimento de Valores',
+    atividade:'P241606.PRE00.S262501/02 — Fortalecer conduta ética e valores institucionais no ambiente militar',
+    tasks:[
+      {code:'26PFV001', name:'Incorporar o Programa de Manutenção da Conduta Militar (PMCM) ao PFV com exemplos e aspectos práticos', prazo:'Dez/2026', status:'andamento'},
+      {code:'26PFV002', name:'Realizar palestra sobre enfrentamento ao uso de drogas com palestrante externo', prazo:'Dez/2026', status:'nao-iniciada'},
+      {code:'26PFV003', name:'Realizar palestra sobre educação financeira com palestrante externo', prazo:'Dez/2026', status:'nao-iniciada'},
+    ]},
+  { id:'SAD', name:'SAD — Seção Administrativa',
+    atividade:'P261605.PRE05.A260101 — Realização das atividades administrativas do efetivo',
+    tasks:[
+      {code:'26SAD001', name:'Confeccionar minuta de Designação/Prorrogação de Prestação de Tarefa por Tempo Certo', prazo:'Jan–Dez', status:'concluida'},
+      {code:'26SAD002', name:'Analisar e enviar proposta de atualização das tabelas de Pessoal', prazo:'Jan–Dez', status:'concluida'},
+      {code:'26SAD003', name:'Confeccionar minuta de Despacho referente a Requerimentos Pessoais', prazo:'Jan–Dez', status:'concluida'},
+      {code:'26SAD004', name:'Confeccionar minuta de Documento referente à área de Pessoal', prazo:'Jan–Dez', status:'concluida'},
+      {code:'26SAD005', name:'Confeccionar o Plano de Avaliação do IV COMAR', prazo:'Jan–Dez', status:'concluida'},
+      {code:'26SAD006', name:'Envio do Processo de Prorrogação de militares temporários (QOCON, QSCON e QSD)', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAD007', name:'Solicitar autorização de pagamento de Diárias para militares do IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAD008', name:'Autorizar pagamento de diárias para militares de OM subordinadas ao IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAD009', name:'Encaminhar processo de Gratificação de Representação ao COMPREP', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAD010', name:'Indicar efetivo para realização de capacitação após autorização do COMPREP', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAD011', name:'Solicitar material de Expediente via AVN', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAD012', name:'Publicar em Boletim Interno a compensação orgânica dos militares do efetivo', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAD013', name:'Analisar solicitações de compra/porte de arma de fogo e Certificado de Registro', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAD014', name:'Analisar as solicitações de Inspeções de Saúde do Efetivo do IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+      {code:'26SAD015', name:'Confeccionar o Plano de Férias do IV COMAR', prazo:'Jan–Dez', status:'andamento'},
+    ]},
+];
+
+// Initialize in-memory occurrence store
+SECTORS.forEach(s => s.tasks.forEach(t => { ocorrencias[t.code] = []; }));
+
+function today() { return new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'}); }
+
+function buildStatusSel(current, cls, onChange) {
+  const sel = document.createElement('select');
+  sel.className = cls + ' ' + current;
+  statusOptions.forEach(s => {
+    const o = document.createElement('option');
+    o.value = s; o.textContent = statusLabels[s];
+    if (s===current) o.selected = true;
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change', e => { e.stopPropagation(); sel.className = cls+' '+sel.value; onChange(sel.value); });
+  return sel;
+}
+
+/* ═══ SETORES ═══ */
+function renderSectors(q) {
+  const grid = document.getElementById('sectors-grid');
+  grid.innerHTML = '';
+  q = (q||'').toLowerCase();
+  SECTORS.forEach(sector => {
+    const filtered = sector.tasks.filter(t => !q || t.code.toLowerCase().includes(q) || t.name.toLowerCase().includes(q));
+    if (q && filtered.length===0) return;
+    const tasks = q ? filtered : sector.tasks;
+    const conc  = tasks.filter(t => t.status==='concluida').length;
+    const total = tasks.length;
+    const pct   = Math.round(conc/total*100);
+    const cls   = pct>=60?'ok':pct>=30?'warn':'danger';
+    const fillColor = pct>=60?'var(--ok-text)':pct>=30?'var(--warn-text)':'var(--danger-text)';
+
+    const card = document.createElement('div'); card.className = 'sector-card';
+
+    const sectorEditable = canEdit(sector.id);
+    const lockIcon = sectorEditable ? '' : ' 🔒';
+
+    const header = document.createElement('div'); header.className = 'sector-card-header';
+    header.innerHTML = `<span class="sector-name">${sector.name}${lockIcon}</span><span class="sector-meta"><span class="sector-badge ${cls}">${pct}% — ${conc}/${total}</span><span class="sector-chevron" id="chev-${sector.id}">▼</span></span>`;
+    header.addEventListener('click', () => {
+      const td = document.getElementById('tasks-'+sector.id);
+      const chev = document.getElementById('chev-'+sector.id);
+      td.classList.toggle('open'); chev.classList.toggle('open');
+    });
+
+    const prog = document.createElement('div'); prog.className = 'sector-progress-bar';
+    const fill = document.createElement('div'); fill.className = 'sector-progress-fill';
+    fill.style.cssText = `width:${pct}%;background:${fillColor};`;
+    prog.appendChild(fill);
+
+    const tasksDiv = document.createElement('div');
+    tasksDiv.className = 'sector-tasks' + (q?' open':'');
+    tasksDiv.id = 'tasks-'+sector.id;
+
+    const atv = document.createElement('div'); atv.className = 'atividade-label'; atv.textContent = sector.atividade;
+    tasksDiv.appendChild(atv);
+
+    tasks.forEach(t => {
+      const block = document.createElement('div'); block.className = 'task-block';
+
+      const row = document.createElement('div'); row.className = 'task-row';
+      const codeEl = document.createElement('span'); codeEl.className = 'task-code'; codeEl.textContent = t.code;
+      const nameEl = document.createElement('span'); nameEl.className = 'task-name'; nameEl.textContent = t.name;
+      const prazoEl = document.createElement('span'); prazoEl.className = 'task-prazo'; prazoEl.textContent = t.prazo;
+
+      if (sectorEditable) {
+        const sel = buildStatusSel(t.status, 'task-status-sel', val => {
+          t.status = val;
+          updateKPIs();
+          updateSectorHeader(sector);
+          // Persist to Supabase (fire and forget)
+          sb.from('task_status').upsert({
+            task_code: t.code,
+            status: val,
+            updated_at: new Date().toISOString(),
+            updated_by: currentUser.user
+          }).then();
+          if (document.getElementById('panel-relogios').classList.contains('active')) renderClocks();
+        });
+        row.appendChild(codeEl); row.appendChild(nameEl); row.appendChild(prazoEl); row.appendChild(sel);
+      } else {
+        const badge = document.createElement('span');
+        badge.className = 'task-status-sel ' + t.status;
+        badge.style.cursor = 'default';
+        badge.textContent = statusLabels[t.status];
+        row.appendChild(codeEl); row.appendChild(nameEl); row.appendChild(prazoEl); row.appendChild(badge);
+      }
+
+      const expandIcon = document.createElement('span');
+      expandIcon.className = 'task-expand-icon'; expandIcon.textContent = '▼';
+      expandIcon.id = 'texp-'+t.code;
+      row.appendChild(expandIcon);
+
+      row.addEventListener('click', e => {
+        if (e.target.tagName==='SELECT' || e.target.tagName==='OPTION') return;
+        const op = document.getElementById('op-'+t.code);
+        if (op) { op.classList.toggle('open'); expandIcon.classList.toggle('open'); }
+      });
+
+      const opDiv = document.createElement('div'); opDiv.className = 'ocorrencias-panel'; opDiv.id = 'op-'+t.code;
+      opDiv.appendChild(buildOcorrPanel(t.code, sectorEditable));
+
+      block.appendChild(row); block.appendChild(opDiv);
+      tasksDiv.appendChild(block);
+    });
+
+    card.appendChild(header); card.appendChild(prog); card.appendChild(tasksDiv);
+    grid.appendChild(card);
+  });
+}
+
+function buildOcorrPanel(code, editable) {
+  const wrap = document.createElement('div');
+  const title = document.createElement('div'); title.className = 'ocorr-title';
+  title.textContent = editable ? 'Registros de Ocorrência' : 'Registros de Ocorrência (somente leitura)';
+  if (!editable) title.style.opacity = '0.6';
+  wrap.appendChild(title);
+  const listDiv = document.createElement('div'); listDiv.className = 'ocorr-list'; listDiv.id = 'olist-'+code;
+  renderOcorrList(code, listDiv, editable);
+  wrap.appendChild(listDiv);
+  if (editable) {
+    const form = document.createElement('div'); form.className = 'ocorr-form';
+    const inp = document.createElement('input'); inp.className = 'ocorr-input'; inp.placeholder = 'Descrever ocorrência...';
+    inp.id = 'oinp-'+code;
+    inp.addEventListener('keydown', e => { if(e.key==='Enter') saveOcorr(code); });
+    const btn = document.createElement('button'); btn.className = 'ocorr-save'; btn.textContent = '+ Registrar';
+    btn.addEventListener('click', () => saveOcorr(code));
+    form.appendChild(inp); form.appendChild(btn);
+    wrap.appendChild(form);
+  } else {
+    const ro = document.createElement('div');
+    ro.style.cssText = 'font-size:10px;color:var(--text-dim);font-style:italic;padding:4px 0;display:flex;align-items:center;gap:5px;';
+    ro.innerHTML = '🔒 Seu acesso não permite registrar ocorrências neste setor.';
+    wrap.appendChild(ro);
+  }
+  return wrap;
+}
+
+function renderOcorrList(code, container, editable) {
+  container = container || document.getElementById('olist-'+code);
+  if (!container) return;
+  if (editable === undefined) {
+    const sector = SECTORS.find(s => s.tasks.some(t => t.code === code));
+    editable = sector ? canEdit(sector.id) : false;
+  }
+  container.innerHTML = '';
+  const list = ocorrencias[code] || [];
+  if (list.length===0) {
+    const emp = document.createElement('div'); emp.className = 'ocorr-empty'; emp.textContent = 'Nenhum registro de ocorrência.';
+    container.appendChild(emp); return;
+  }
+  list.forEach((o,i) => {
+    const item = document.createElement('div'); item.className = 'ocorr-item';
+    const dot = document.createElement('div'); dot.className = 'ocorr-dot';
+    const text = document.createElement('div'); text.className = 'ocorr-text'; text.textContent = o.text;
+    const date = document.createElement('div'); date.className = 'ocorr-date'; date.textContent = o.date;
+    item.appendChild(dot); item.appendChild(text); item.appendChild(date);
+    if (editable) {
+      const del = document.createElement('button'); del.className = 'ocorr-del'; del.textContent = '×';
+      del.addEventListener('click', async () => {
+        if (o.id) await sb.from('occurrences').delete().eq('id', o.id);
+        ocorrencias[code].splice(i, 1);
+        renderOcorrList(code);
+        updateOcorrSummary();
+      });
+      item.appendChild(del);
+    }
+    container.appendChild(item);
+  });
+}
+
+async function saveOcorr(code) {
+  const inp = document.getElementById('oinp-'+code);
+  const text = inp.value.trim(); if (!text) return;
+  const { data, error } = await sb.from('occurrences').insert({
+    task_code: code,
+    text,
+    date: today(),
+    created_by: currentUser.user
+  }).select().single();
+  if (!error && data) {
+    if (!ocorrencias[code]) ocorrencias[code] = [];
+    ocorrencias[code].push({ id: data.id, text: data.text, date: data.date });
+    inp.value = '';
+    renderOcorrList(code);
+    updateOcorrSummary();
+  }
+}
+
+function updateOcorrSummary() {
+  let total = 0;
+  Object.values(ocorrencias).forEach(list => total += list.length);
+  const el = document.getElementById('ocorr-summary');
+  if (!el) return;
+  if (total===0) {
+    el.innerHTML = '<span style="color:var(--text-dim)">Nenhuma ocorrência registrada.<br>Use o ▼ em cada tarefa para registrar.</span>';
+  } else {
+    const recent = [];
+    SECTORS.forEach(s => s.tasks.forEach(t => {
+      (ocorrencias[t.code]||[]).forEach(o => recent.push({code:t.code,text:o.text,date:o.date}));
+    }));
+    recent.sort((a,b) => b.date.localeCompare(a.date));
+    el.innerHTML = `<div style="font-size:26px;font-weight:700;color:var(--ok-text);line-height:1;">${total}</div><div style="font-size:12px;color:var(--text-muted);margin:5px 0 10px;">ocorrências registradas</div>`
+      + recent.slice(0,4).map(o=>`<div style="font-size:11px;color:var(--text-secondary);padding:4px 0;border-bottom:1px solid var(--border-light);display:flex;gap:6px;"><span style="color:var(--accent-glow);font-family:monospace;flex-shrink:0">${o.code}</span><span style="flex:1">${o.text.slice(0,60)}${o.text.length>60?'…':''}</span><span style="color:var(--text-muted);font-family:monospace;white-space:nowrap">${o.date}</span></div>`).join('');
+  }
+}
+
+function updateSectorHeader(sector) {
+  const conc  = sector.tasks.filter(t=>t.status==='concluida').length;
+  const total = sector.tasks.length;
+  const pct   = Math.round(conc/total*100);
+  const cls   = pct>=60?'ok':pct>=30?'warn':'danger';
+  const badge = document.querySelector('#tasks-'+sector.id)?.previousSibling?.previousSibling?.querySelector('.sector-badge');
+  if (badge) { badge.className = 'sector-badge '+cls; badge.textContent = pct+'% — '+conc+'/'+total; }
+}
+
+function expandAll()   { document.querySelectorAll('.sector-tasks').forEach(e=>e.classList.add('open')); document.querySelectorAll('.sector-chevron').forEach(e=>e.classList.add('open')); }
+function collapseAll() { document.querySelectorAll('.sector-tasks').forEach(e=>e.classList.remove('open')); document.querySelectorAll('.sector-chevron').forEach(e=>e.classList.remove('open')); }
+
+document.getElementById('sector-search').addEventListener('input', e => renderSectors(e.target.value));
+
+/* ═══ KPIs ═══ */
+function updateKPIs() {
+  let totalTasks=0, concTasks=0;
+  const sectorMap = {};
+  SECTORS.forEach(s => {
+    sectorMap[s.id] = {total:0,conc:0};
+    s.tasks.forEach(t => {
+      totalTasks++;
+      if (t.status==='concluida') concTasks++;
+      sectorMap[s.id].total++;
+      if (t.status==='concluida') sectorMap[s.id].conc++;
+    });
+  });
+  document.getElementById('kpi-total-tasks').textContent = totalTasks;
+  document.getElementById('kpi-total-conc').textContent  = concTasks;
+
+  const sectors = SECTORS.length;
+  const concSectors = SECTORS.filter(s=>s.tasks.every(t=>t.status==='concluida')).length;
+  const atrSectors  = SECTORS.filter(s=>s.tasks.some(t=>t.status==='atrasada')).length;
+  const andSectors  = sectors - concSectors - atrSectors;
+  document.getElementById('kpi-total').textContent    = sectors;
+  document.getElementById('kpi-conc').textContent     = concSectors;
+  document.getElementById('kpi-conc-pct').textContent = 'setores 100% concluídos';
+  document.getElementById('kpi-and').textContent      = andSectors;
+  document.getElementById('kpi-and-pct').textContent  = 'setores em andamento';
+  document.getElementById('kpi-atr').textContent      = atrSectors;
+  document.getElementById('kpi-atr-pct').textContent  = 'setores com atraso';
+
+  document.getElementById('area-bars').innerHTML = Object.entries(sectorMap).map(([area,v])=>{
+    const pct=Math.round(v.conc/v.total*100);
+    const cls=pct>=60?'ok':pct>=30?'warn':'danger';
+    return `<div class="pb-row"><span class="pb-label">${area}</span><div class="pb-track"><div class="pb-fill ${cls}" style="width:${pct}%"></div></div><span class="pb-pct">${pct}%</span></div>`;
+  }).join('');
+
+  updateOcorrSummary();
+}
+
+/* ═══ CLOCKS ═══ */
+function getSectorDataClocks() {
+  const map = {};
+  SECTORS.forEach(s => {
+    let conc=0,and=0,atr=0,ni=0;
+    s.tasks.forEach(t => {
+      if(t.status==='concluida') conc++;
+      else if(t.status==='andamento') and++;
+      else if(t.status==='atrasada') atr++;
+      else ni++;
+    });
+    map[s.id] = { name:s.id, total:s.tasks.length, conc, and, atr, ni };
+  });
+  return map;
+}
+
+function renderClocks() {
+  const data = getSectorDataClocks();
+  const grid = document.getElementById('clocks-grid');
+  const summary = document.getElementById('clocks-summary');
+  grid.innerHTML = '';
+
+  let gConc=0,gAnd=0,gAtr=0,gNi=0,gTotal=0;
+  Object.values(data).forEach(d=>{ gConc+=d.conc; gAnd+=d.and; gAtr+=d.atr; gNi+=d.ni; gTotal+=d.total; });
+  const gPct = gTotal ? Math.round(gConc/gTotal*100) : 0;
+  summary.innerHTML = `
+    <div><div class="summary-big">${gPct}%</div><div class="summary-label">conclusão geral</div></div>
+    <div class="summary-divider"></div>
+    <div class="summary-item"><div class="summary-item-val" style="color:var(--ok-text)">${gConc}</div><div class="summary-item-lbl">concluídas</div></div>
+    <div class="summary-item"><div class="summary-item-val" style="color:var(--warn-text)">${gAnd}</div><div class="summary-item-lbl">andamento</div></div>
+    <div class="summary-item"><div class="summary-item-val" style="color:var(--danger-text)">${gAtr}</div><div class="summary-item-lbl">atrasadas</div></div>
+    <div class="summary-item"><div class="summary-item-val" style="color:var(--text-dim)">${gNi}</div><div class="summary-item-lbl">não iniciadas</div></div>
+    <div class="summary-item"><div class="summary-item-val">${gTotal}</div><div class="summary-item-lbl">total tarefas</div></div>`;
+
+  const isDarkMode = document.documentElement.getAttribute('data-theme') !== 'light';
+  const colors = {
+    conc:   '#42a5f5',
+    and:    '#f59e0b',
+    atr:    '#ef4444',
+    ni:     isDarkMode ? '#1e3a5f' : '#cbd5e1',
+    track:  isDarkMode ? '#0d1a2e' : '#e2eaf4',
+    text:   isDarkMode ? '#cfe3ff' : '#0a1f3d',
+    sub:    isDarkMode ? '#3a6a9a' : '#4a7aaa',
+  };
+
+  Object.values(data).forEach(d => {
+    const pct = d.total ? Math.round(d.conc/d.total*100) : 0;
+    const card = document.createElement('div'); card.className = 'clock-card';
+    const nameEl = document.createElement('div'); nameEl.className = 'clock-sector-name'; nameEl.textContent = d.name;
+    const wrap = document.createElement('div'); wrap.className = 'clock-wrap';
+    const canvas = document.createElement('canvas'); canvas.className = 'clock-canvas'; canvas.width = 140; canvas.height = 140;
+    const centerDiv = document.createElement('div'); centerDiv.className = 'clock-center-text';
+    const pctEl = document.createElement('div'); pctEl.className = 'clock-pct'; pctEl.style.color = colors.text; pctEl.textContent = pct+'%';
+    const lbl = document.createElement('div'); lbl.className = 'clock-label'; lbl.textContent = 'concluído';
+    centerDiv.appendChild(pctEl); centerDiv.appendChild(lbl);
+    wrap.appendChild(canvas); wrap.appendChild(centerDiv);
+    const stats = document.createElement('div'); stats.className = 'clock-stats';
+    [['conc','ok',d.conc,'conc',colors.conc],['and','warn',d.and,'and',colors.and],['atr','dng',d.atr,'atr',colors.atr],['ni','ni',d.ni,'ni',colors.ni]].forEach(([,, val, key, col])=>{
+      const s=document.createElement('div'); s.className='clock-stat';
+      const v=document.createElement('div'); v.className='clock-stat-val'; v.style.color=col; v.textContent=val;
+      const l=document.createElement('div'); l.className='clock-stat-lbl'; l.textContent=key;
+      s.appendChild(v); s.appendChild(l); stats.appendChild(s);
+    });
+    card.appendChild(nameEl); card.appendChild(wrap); card.appendChild(stats);
+    grid.appendChild(card);
+    drawDonut(canvas, d, colors);
+  });
+}
+
+function drawDonut(canvas, d, colors) {
+  const ctx = canvas.getContext('2d');
+  const cx=70,cy=70,r=54,lw=16;
+  ctx.clearRect(0,0,140,140);
+  const slices = [
+    { val:d.conc, color:colors.conc },
+    { val:d.and,  color:colors.and  },
+    { val:d.atr,  color:colors.atr  },
+    { val:d.ni,   color:colors.ni   },
+  ].filter(s=>s.val>0);
+  if (slices.length===0) {
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.strokeStyle=colors.track; ctx.lineWidth=lw; ctx.stroke();
+    return;
+  }
+  let angle = -Math.PI/2;
+  slices.forEach(s => {
+    const sweep = (s.val/d.total)*Math.PI*2;
+    ctx.beginPath(); ctx.arc(cx,cy,r,angle,angle+sweep); ctx.strokeStyle=s.color; ctx.lineWidth=lw; ctx.lineCap='butt'; ctx.stroke();
+    angle += sweep;
+  });
+}
+</script>
+</body>
+</html>
