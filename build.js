@@ -4,8 +4,7 @@ const url = process.env.SUPABASE_URL || '';
 const key = process.env.SUPABASE_ANON_KEY || '';
 
 if (!url || !key) {
-  console.error('ERRO: SUPABASE_URL e SUPABASE_ANON_KEY são obrigatórias.');
-  process.exit(1);
+  console.warn('AVISO: SUPABASE_URL ou SUPABASE_ANON_KEY não definidas. Configure as env vars no Vercel.');
 }
 
 let html = fs.readFileSync('index.html', 'utf8');
