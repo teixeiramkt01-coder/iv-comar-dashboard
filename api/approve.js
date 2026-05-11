@@ -45,13 +45,22 @@ module.exports = async function handler(req, res) {
     if (fetchErr || !solicitacao) return res.status(404).json({ error: 'Solicitação não encontrada' });
     if (solicitacao.status !== 'pendente') return res.status(400).json({ error: 'Solicitação já processada' });
 
+    const email = `${solicitacao.display_name.toLowerCase()}@ivcomar.fab`;
     const { error: createErr } = await admin.auth.admin.createUser({
-      email:         `${solicitacao.display_name.toLowerCase()}@ivcomar.fab`,
+      email,
       password:      solicitacao.password_temp,
       user_metadata: { display_name: solicitacao.display_name, sector_id: solicitacao.sector_id || null },
       email_confirm: true,
     });
-    if (createErr) return res.status(500).json({ error: createErr.message });
+    if (createErr) {
+      const jaExiste = createErr.message.toLowerCase().includes('already') || createErr.message.toLowerCase().includes('registered');
+      if (jaExiste) {
+        return res.status(409).json({
+          error: `Usuário "${solicitacao.display_name}" já existe no sistema. Rejeite esta solicitação e peça ao solicitante que use outra identificação.`
+        });
+      }
+      return res.status(500).json({ error: createErr.message });
+    }
 
     await admin.from('user_requests').update({
       status:       'aprovada',

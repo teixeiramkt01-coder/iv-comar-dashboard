@@ -1310,7 +1310,15 @@ async function handleSolicitacao(id, action, btn) {
 
   const json = await res.json();
   if (!res.ok) {
-    alert('Erro: ' + (json.error || 'Falha na operação'));
+    const card = btn.closest('.solicit-card');
+    let errEl = card.querySelector('.solicit-err');
+    if (!errEl) {
+      errEl = document.createElement('div');
+      errEl.className = 'solicit-err';
+      errEl.style.cssText = 'width:100%;font-size:11px;color:var(--danger-text);margin-top:6px;line-height:1.5;';
+      card.appendChild(errEl);
+    }
+    errEl.textContent = '⚠ ' + (json.error || 'Falha na operação');
     btn.closest('.solicit-actions').querySelectorAll('button').forEach(b => b.disabled = false);
     return;
   }
