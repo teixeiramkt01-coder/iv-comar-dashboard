@@ -362,6 +362,10 @@ html,body{min-height:100%;background:var(--bg-root);font-family:-apple-system,Bl
       <input class="login-input" id="req-name" type="text" placeholder="Ex: NOVA, XYZ..." autocomplete="off" style="text-transform:uppercase;"/>
     </div>
     <div class="req-field">
+      <label class="login-label">E-mail pessoal</label>
+      <input class="login-input" id="req-email" type="email" placeholder="Ex: joao.silva@fab.mil.br" autocomplete="off"/>
+    </div>
+    <div class="req-field">
       <label class="login-label">Setor de acesso</label>
       <select class="req-select" id="req-sector">
         <option value="">— Selecione o setor —</option>
@@ -1226,15 +1230,17 @@ function renderClocks() {
 
 /* ═══ SOLICITAÇÕES ═══ */
 async function enviarSolicitacao() {
-  const name  = document.getElementById('req-name').value.trim().toUpperCase();
+  const name   = document.getElementById('req-name').value.trim().toUpperCase();
+  const email  = document.getElementById('req-email').value.trim();
   const sector = document.getElementById('req-sector').value;
-  const pass  = document.getElementById('req-pass').value;
-  const pass2 = document.getElementById('req-pass2').value;
-  const msg   = document.getElementById('req-msg');
-  const btn   = document.getElementById('req-btn');
+  const pass   = document.getElementById('req-pass').value;
+  const pass2  = document.getElementById('req-pass2').value;
+  const msg    = document.getElementById('req-msg');
+  const btn    = document.getElementById('req-btn');
 
   msg.className = 'req-msg err';
   if (!name)            { msg.textContent = 'Informe a identificação.'; return; }
+  if (!email)           { msg.textContent = 'Informe o e-mail pessoal.'; return; }
   if (!sector)          { msg.textContent = 'Selecione o setor.'; return; }
   if (pass.length < 6)  { msg.textContent = 'Senha deve ter no mínimo 6 caracteres.'; return; }
   if (pass !== pass2)   { msg.textContent = 'As senhas não coincidem.'; return; }
@@ -1243,6 +1249,7 @@ async function enviarSolicitacao() {
 
   const { error } = await sb.from('user_requests').insert({
     display_name:  name,
+    email:         email,
     sector_id:     sector,
     password_temp: pass,
     status:        'pendente'
@@ -1256,7 +1263,7 @@ async function enviarSolicitacao() {
   } else {
     msg.className = 'req-msg ok';
     msg.textContent = '✔ Solicitação enviada! Aguarde aprovação do administrador.';
-    ['req-name','req-pass','req-pass2'].forEach(id => document.getElementById(id).value = '');
+    ['req-name','req-email','req-pass','req-pass2'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('req-sector').value = '';
   }
 }
