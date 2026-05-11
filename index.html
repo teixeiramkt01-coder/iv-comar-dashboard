@@ -1249,7 +1249,6 @@ async function enviarSolicitacao() {
 
   const { error } = await sb.from('user_requests').insert({
     display_name:  name,
-    email:         email,
     sector_id:     sector,
     password_temp: pass,
     status:        'pendente'

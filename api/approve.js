@@ -69,30 +69,6 @@ module.exports = async function handler(req, res) {
       reviewed_at:  new Date().toISOString()
     }).eq('id', request_id);
 
-    // Envia e-mail de notificação ao solicitante
-    const resendKey = (process.env.RESEND_API_KEY || '').trim();
-    if (resendKey && solicitacao.email) {
-      const loginEmail = `${solicitacao.display_name.toLowerCase()}@ivcomar.fab`;
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${resendKey}` },
-        body: JSON.stringify({
-          from: 'IV COMAR <noreply@ivcomar.fab>',
-          to: [solicitacao.email],
-          subject: 'Acesso ao Sistema IV COMAR — Solicitação Aprovada',
-          html: `
-            <p>Seu acesso ao sistema <strong>IV COMAR — PTA 2026</strong> foi <strong>aprovado</strong>.</p>
-            <p><strong>Identificação:</strong> ${solicitacao.display_name}<br>
-            <strong>Setor:</strong> ${solicitacao.sector_id || '—'}<br>
-            <strong>E-mail de acesso:</strong> ${loginEmail}</p>
-            <p>Utilize a senha que você cadastrou na solicitação para efetuar o primeiro acesso.</p>
-            <hr>
-            <small>IV COMAR · Quarto Comando Aéreo Regional · Força Aérea Brasileira</small>
-          `
-        })
-      }).catch(() => {}); // falha silenciosa — aprovação já foi concluída
-    }
-
     return res.json({ success: true });
   }
 
