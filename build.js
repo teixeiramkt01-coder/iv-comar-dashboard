@@ -1,7 +1,7 @@
 const fs = require('fs');
 
-const url = process.env.SUPABASE_URL || '';
-const key = process.env.SUPABASE_ANON_KEY || '';
+const url = (process.env.SUPABASE_URL || '').trim();
+const key = (process.env.SUPABASE_ANON_KEY || '').trim();
 
 if (!url || !key) {
   console.warn('AVISO: SUPABASE_URL ou SUPABASE_ANON_KEY não definidas. Configure as env vars no Vercel.');

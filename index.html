@@ -421,6 +421,9 @@ const SUPABASE_URL      = '%%SUPABASE_URL%%';
 const SUPABASE_ANON_KEY = '%%SUPABASE_ANON_KEY%%';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Fallback: se onAuthStateChange não disparar em 6s, mostra login
+const _authTimeout = setTimeout(() => mostrarLogin(), 6000);
+
 /* ═══ THEME ═══ */
 let isDark = true;
 document.getElementById('theme-toggle').addEventListener('click', () => {
@@ -466,6 +469,7 @@ function canEdit(sectorId) {
 }
 
 sb.auth.onAuthStateChange(async (event, session) => {
+  clearTimeout(_authTimeout);
   if (session?.user) {
     const meta = session.user.user_metadata;
     currentUser = { user: meta.display_name, sectorId: meta.sector_id ?? null };
