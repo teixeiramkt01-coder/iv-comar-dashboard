@@ -334,8 +334,8 @@ html,body{min-height:100%;background:var(--bg-root);font-family:-apple-system,Bl
       <div class="login-sub">Programa de Trabalho Anual 2026</div>
     </div>
     <div class="login-field">
-      <label class="login-label">E-mail</label>
-      <input class="login-input" id="login-user" type="email" placeholder="seu.email@fab.mil.br" autocomplete="off"/>
+      <label class="login-label">Identificação</label>
+      <input class="login-input" id="login-user" type="text" placeholder="Identificação de acesso" autocomplete="off"/>
     </div>
     <div class="login-field" style="margin-top:0">
       <label class="login-label">Senha</label>
@@ -358,8 +358,8 @@ html,body{min-height:100%;background:var(--bg-root);font-family:-apple-system,Bl
       <div class="login-sub">A solicitação será analisada pelo administrador</div>
     </div>
     <div class="req-field">
-      <label class="login-label">E-mail</label>
-      <input class="login-input" id="req-email" type="email" placeholder="Ex: joao.silva@fab.mil.br" autocomplete="off"/>
+      <label class="login-label">Identificação</label>
+      <input class="login-input" id="req-email" type="text" placeholder="Ex: NOME, joao.silva@fab.mil.br" autocomplete="off"/>
     </div>
     <div class="req-field">
       <label class="login-label">Setor de acesso</label>
@@ -539,7 +539,8 @@ async function doLogin() {
   if (!u || !p) return;
   const btn = document.getElementById('login-btn');
   btn.textContent = 'AGUARDE...'; btn.disabled = true;
-  const { error } = await sb.auth.signInWithPassword({ email: u, password: p });
+  const email = u.includes('@') ? u : u.toLowerCase() + '@ivcomar.fab';
+  const { error } = await sb.auth.signInWithPassword({ email, password: p });
   btn.textContent = 'ACESSAR SISTEMA'; btn.disabled = false;
   if (error) {
     document.getElementById('login-error').textContent = 'Usuário ou senha incorretos. Acesso negado.';
@@ -1225,7 +1226,7 @@ function renderClocks() {
 
 /* ═══ SOLICITAÇÕES ═══ */
 async function enviarSolicitacao() {
-  const email  = document.getElementById('req-email').value.trim();
+  const ident  = document.getElementById('req-email').value.trim();
   const sector = document.getElementById('req-sector').value;
   const pass   = document.getElementById('req-pass').value;
   const pass2  = document.getElementById('req-pass2').value;
@@ -1233,7 +1234,7 @@ async function enviarSolicitacao() {
   const btn    = document.getElementById('req-btn');
 
   msg.className = 'req-msg err';
-  if (!email)           { msg.textContent = 'Informe o e-mail.'; return; }
+  if (!ident)           { msg.textContent = 'Informe a identificação.'; return; }
   if (!sector)          { msg.textContent = 'Selecione o setor.'; return; }
   if (pass.length < 6)  { msg.textContent = 'Senha deve ter no mínimo 6 caracteres.'; return; }
   if (pass !== pass2)   { msg.textContent = 'As senhas não coincidem.'; return; }
@@ -1241,7 +1242,7 @@ async function enviarSolicitacao() {
   btn.disabled = true; btn.textContent = 'ENVIANDO...';
 
   const { error } = await sb.from('user_requests').insert({
-    display_name:  email,
+    display_name:  ident,
     sector_id:     sector,
     password_temp: pass,
     status:        'pendente'

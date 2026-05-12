@@ -45,8 +45,9 @@ module.exports = async function handler(req, res) {
     if (fetchErr || !solicitacao) return res.status(404).json({ error: 'Solicitação não encontrada' });
     if (solicitacao.status !== 'pendente') return res.status(400).json({ error: 'Solicitação já processada' });
 
-    const email = solicitacao.display_name;
-    const displayName = email.split('@')[0];
+    const ident = solicitacao.display_name;
+    const email = ident.includes('@') ? ident : ident.toLowerCase() + '@ivcomar.fab';
+    const displayName = ident.includes('@') ? ident.split('@')[0] : ident;
     const { error: createErr } = await admin.auth.admin.createUser({
       email,
       password:      solicitacao.password_temp,
