@@ -514,8 +514,17 @@ const SUPABASE_URL      = '%%SUPABASE_URL%%';
 const SUPABASE_ANON_KEY = '%%SUPABASE_ANON_KEY%%';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Fallback: se onAuthStateChange não disparar em 6s, mostra login
-const _authTimeout = setTimeout(() => mostrarLogin(), 6000);
+async function iniciarSessao(session) {
+  if (session?.user) {
+    const meta = session.user.user_metadata;
+    currentUser = { user: meta.display_name, sectorId: meta.sector_id ?? null };
+    try { await carregarDados(); } catch(e) { console.warn('Erro ao carregar dados:', e); }
+    mostrarPrincipal();
+  } else {
+    currentUser = null;
+    mostrarLogin();
+  }
+}
 
 /* ═══ THEME ═══ */
 let isDark = true;
@@ -561,17 +570,13 @@ function canEdit(sectorId) {
   return currentUser.sectorId === sectorId;
 }
 
-sb.auth.onAuthStateChange(async (event, session) => {
-  clearTimeout(_authTimeout);
-  if (session?.user) {
-    const meta = session.user.user_metadata;
-    currentUser = { user: meta.display_name, sectorId: meta.sector_id ?? null };
-    try { await carregarDados(); } catch(e) { console.warn('Erro ao carregar dados:', e); }
-    mostrarPrincipal();
-  } else {
-    currentUser = null;
-    mostrarLogin();
-  }
+// Carga inicial: lê localStorage imediatamente, sem esperar rede
+sb.auth.getSession().then(({ data: { session } }) => iniciarSessao(session));
+
+// Reage a login/logout subsequentes
+sb.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN')  iniciarSessao(session);
+  if (event === 'SIGNED_OUT') { currentUser = null; mostrarLogin(); }
 });
 
 async function carregarDados() {
