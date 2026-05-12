@@ -1016,19 +1016,10 @@ function velColor(cls){
 const PROG_KEY='pta_iv_comar_progresso';
 function loadProgStore(){try{return JSON.parse(localStorage.getItem(PROG_KEY)||'{}');}catch{return{};}}
 function saveProgStore(s){localStorage.setItem(PROG_KEY,JSON.stringify(s));}
-function getAutoProgress(status){return{'nao-iniciada':0,'andamento':50,'concluida':100,'atrasada':10}[status]??0;}
-function getProgress(code){
-  const st=loadProgStore();
-  if(st[code]?.mode==='manual')return st[code].value;
-  const task=SECTORS.flatMap(s=>s.tasks).find(t=>t.code===code);
-  return getAutoProgress(task?.status||'nao-iniciada');
-}
+function getProgress(code){const st=loadProgStore();return st[code]??0;}
 
 function buildProgressPanel(task,editable){
-  const store=loadProgStore();
-  const mode=store[task.code]?.mode||'auto';
-  const autoVal=getAutoProgress(task.status);
-  const progress=mode==='manual'?(store[task.code]?.value??autoVal):autoVal;
+  const progress=getProgress(task.code);
   const vel=calcVelocidade(task);
   const vClr=velColor(vel.cls);
 
@@ -1040,11 +1031,7 @@ function buildProgressPanel(task,editable){
   const titleSpan=document.createElement('span');
   titleSpan.style.cssText='font-size:10px;font-weight:700;color:var(--accent-glow);letter-spacing:0.8px;text-transform:uppercase;';
   titleSpan.textContent='Progresso';
-  const modeSpan=document.createElement('span');
-  modeSpan.id='pmode-'+task.code;
-  modeSpan.style.cssText=`font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;background:${mode==='manual'?'var(--warn-bg)':'var(--ok-bg)'};color:${mode==='manual'?'var(--warn-text)':'var(--ok-text)'};border:1px solid ${mode==='manual'?'var(--warn-border)':'var(--ok-border)'};`;
-  modeSpan.textContent=mode==='manual'?'M':'A';
-  hdr.appendChild(titleSpan);hdr.appendChild(modeSpan);
+  hdr.appendChild(titleSpan);
   if(vel.velocity!==null){
     const velSpan=document.createElement('span');
     velSpan.style.cssText='font-size:10px;color:var(--text-muted);margin-left:2px;';
@@ -1071,47 +1058,21 @@ function buildProgressPanel(task,editable){
     slider.value=progress;slider.className='prog-slider';slider.id='pslider-'+task.code;
     const lbl=document.createElement('span');
     lbl.style.cssText='font-size:10px;color:var(--text-muted);min-width:30px;text-align:right;font-family:monospace;';
-    lbl.id='psliderlbl-'+task.code;lbl.textContent=progress+'%';
-    const resetBtn=document.createElement('button');
-    resetBtn.textContent='Auto';
-    resetBtn.style.cssText='font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-family:inherit;white-space:nowrap;';
+    lbl.textContent=progress+'%';
     slider.addEventListener('input',()=>{
-      const val=parseInt(slider.value);lbl.textContent=val+'%';
-      const st2=loadProgStore();st2[task.code]={mode:'manual',value:val};saveProgStore(st2);
-      updateProgDisplay(task.code,val,'manual',vClr);
+      const val=parseInt(slider.value);
+      lbl.textContent=val+'%';
+      const st2=loadProgStore();st2[task.code]=val;saveProgStore(st2);
+      const realB=document.querySelector('#prog-'+task.code+' .prog-bar-real');
+      if(realB)realB.style.width=val+'%';
+      const lblB=document.querySelector('#prog-'+task.code+' .prog-bar-lbl');
+      if(lblB)lblB.textContent='Progresso: '+val+'%';
+      updateKPIs();updateSectorHeader(SECTORS.find(s=>s.tasks.includes(task)));
     });
-    resetBtn.addEventListener('click',()=>{
-      const st2=loadProgStore();delete st2[task.code];saveProgStore(st2);
-      const av=getAutoProgress(task.status);
-      slider.value=av;lbl.textContent=av+'%';
-      updateProgDisplay(task.code,av,'auto',vClr);
-    });
-    row.appendChild(slider);row.appendChild(lbl);row.appendChild(resetBtn);
+    row.appendChild(slider);row.appendChild(lbl);
     wrap.appendChild(row);
   }
   return wrap;
-}
-
-function updateProgDisplay(code,progress,mode,color){
-  const realBar=document.querySelector('#prog-'+code+' .prog-bar-real');
-  if(realBar){realBar.style.width=progress+'%';realBar.style.background=color;}
-  const lblEl=document.querySelector('#prog-'+code+' .prog-bar-lbl');
-  if(lblEl)lblEl.textContent='Progresso: '+progress+'%';
-  const modeEl=document.getElementById('pmode-'+code);
-  if(modeEl){
-    modeEl.textContent=mode==='manual'?'M':'A';
-    modeEl.style.background=mode==='manual'?'var(--warn-bg)':'var(--ok-bg)';
-    modeEl.style.color=mode==='manual'?'var(--warn-text)':'var(--ok-text)';
-    modeEl.style.borderColor=mode==='manual'?'var(--warn-border)':'var(--ok-border)';
-  }
-}
-
-function refreshProgPanel(task){
-  const el=document.getElementById('prog-'+task.code);
-  if(!el)return;
-  const sector=SECTORS.find(s=>s.tasks.includes(task));
-  const newPanel=buildProgressPanel(task,sector?canEdit(sector.id):false);
-  el.replaceWith(newPanel);
 }
 
 /* ═══ SETORES ═══ */
@@ -1166,7 +1127,6 @@ function renderSectors(q) {
       if (sectorEditable) {
         const sel = buildStatusSel(t.status, 'task-status-sel', val => {
           t.status = val;
-          refreshProgPanel(t);
           updateKPIs();
           updateSectorHeader(sector);
           // Persist to Supabase (fire and forget)
