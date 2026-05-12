@@ -301,6 +301,31 @@ html,body{min-height:100%;background:var(--bg-root);font-family:-apple-system,Bl
 .btn-rejeitar:disabled{opacity:0.5;cursor:not-allowed;}
 .solicit-empty{font-size:13px;color:var(--text-dim);text-align:center;padding:32px 0;font-style:italic;}
 
+/* ── VELOCIDADE ── */
+.vel-badge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:0.3px;white-space:nowrap;flex-shrink:0;}
+.vel-adiantado{background:rgba(34,197,94,0.12);color:#22c55e;border:1px solid rgba(34,197,94,0.25);}
+.vel-ok{background:var(--ok-bg);color:var(--ok-text);border:1px solid var(--ok-border);}
+.vel-atencao{background:var(--warn-bg);color:var(--warn-text);border:1px solid var(--warn-border);}
+.vel-critico{background:var(--danger-bg);color:var(--danger-text);border:1px solid var(--danger-border);}
+/* ── PROGRESSO ── */
+.prog-panel{background:var(--bg-surface);border-top:1px solid var(--border-light);padding:8px 16px 10px 90px;}
+.prog-bars{position:relative;height:16px;background:var(--bg-input);border-radius:4px;overflow:hidden;margin:5px 0;}
+.prog-bar-time{position:absolute;top:0;left:0;height:100%;background:rgba(21,101,192,0.28);border-radius:4px;transition:width 0.4s;}
+.prog-bar-real{position:absolute;top:0;left:0;height:100%;border-radius:4px;transition:width 0.4s;opacity:0.8;}
+.prog-bar-labels{position:absolute;inset:0;display:flex;align-items:center;padding:0 7px;justify-content:space-between;pointer-events:none;}
+.prog-bar-lbl{font-size:9px;color:rgba(255,255,255,0.75);font-weight:600;}
+.prog-slider{width:100%;accent-color:var(--accent-bright);cursor:pointer;}
+/* ── RANKING ── */
+.ranking-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-top:14px;}
+.rank-toggle{display:flex;gap:6px;margin-bottom:10px;}
+.rank-toggle-btn{font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-family:inherit;transition:all 0.15s;}
+.rank-toggle-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.ranking-table{width:100%;border-collapse:collapse;font-size:12px;}
+.ranking-table th{font-size:10px;color:var(--text-muted);text-align:left;padding:5px 10px;border-bottom:1px solid var(--border);font-weight:600;letter-spacing:0.5px;text-transform:uppercase;}
+.ranking-table td{padding:7px 10px;border-bottom:1px solid var(--border-light);color:var(--text-secondary);vertical-align:middle;}
+.ranking-table tr:last-child td{border-bottom:none;}
+.ranking-table tr:hover td{background:rgba(21,101,192,0.05);}
+
 /* SCROLLBAR */
 ::-webkit-scrollbar{width:5px;height:5px;}
 ::-webkit-scrollbar-track{background:var(--bg-root);}
@@ -452,6 +477,7 @@ html,body{min-height:100%;background:var(--bg-root);font-family:-apple-system,Bl
           <div id="ocorr-summary" style="font-size:13px;color:var(--text-dim);line-height:1.8;">Nenhuma ocorrência registrada.<br>Use o ▼ em cada tarefa para registrar.</div>
         </div>
       </div>
+      <div id="ranking-section"></div>
     </div>
 
     <!-- TAREFAS POR SETOR -->
@@ -491,6 +517,10 @@ html,body{min-height:100%;background:var(--bg-root);font-family:-apple-system,Bl
         <div class="alert-warn"><div class="alert-text-warn"><strong>Plano de Integridade CPCA:</strong> prazo jun/2026. Formalizar plano de comunicação até maio.</div><div class="alert-code">P240402.PRE00.S261803 · CPLG/SGOV + CPCA</div></div>
         <div class="alert-warn"><div class="alert-text-warn"><strong>QTS Treinamento Físico (26SEF001):</strong> verificar publicação mensal na página do IV COMAR.</div><div class="alert-code">P241609.PRE00.S262401 · CADM/SEF</div></div>
         <div class="alert-warn"><div class="alert-text-warn"><strong>Notas de Empenho (26SAE014):</strong> status atrasado — verificar com SAE/CADM imediatamente.</div><div class="alert-code">26SAE014 · SAE/CADM</div></div>
+      </div>
+      <div style="margin-top:18px;">
+        <div class="section-title">Alertas de Velocidade</div>
+        <div id="vel-alerts-list" style="display:flex;flex-direction:column;gap:8px;"></div>
       </div>
     </div>
 
@@ -654,6 +684,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'relogios') renderClocks();
     if (btn.dataset.tab === 'setores') renderSectors('');
+    if (btn.dataset.tab === 'alertas') renderVelocityAlerts();
     if (btn.dataset.tab === 'solicitacoes') renderSolicitacoes();
   });
 });
@@ -922,6 +953,167 @@ function buildStatusSel(current, cls, onChange) {
   return sel;
 }
 
+/* ═══ PRAZO / VELOCIDADE ═══ */
+const _M={jan:1,fev:2,mar:3,abr:4,mai:5,jun:6,jul:7,ago:8,set:9,out:10,nov:11,dez:12};
+function _mes(s){return _M[(s||'').slice(0,3).toLowerCase()]||null;}
+
+function parsePrazo(str){
+  if(!str)return null;
+  const raw=str.trim();const s=raw.toLowerCase();
+  if(['eventual','conforme comprep','mensal'].includes(s))return null;
+  let m;
+  m=raw.match(/\d+\/([A-Za-z]{3,})[–—\-]\d+\/([A-Za-z]{3,})/i);
+  if(m){const a=_mes(m[1]),b=_mes(m[2]);if(a&&b)return{start:a,end:b};}
+  m=raw.match(/\d+[–—\-]\d+\/([A-Za-z]{3,})/i);
+  if(m){const a=_mes(m[1]);if(a)return{start:a,end:a};}
+  m=raw.match(/^([A-Za-z]{3,})[–—\-]([A-Za-z]{3,})$/i);
+  if(m){const a=_mes(m[1]),b=_mes(m[2]);if(a&&b)return{start:a,end:b};}
+  m=raw.match(/^([A-Za-z]{3,})\/\d{4}$/i);
+  if(m){const a=_mes(m[1]);if(a)return{start:a,end:a};}
+  m=raw.match(/^([A-Za-z]{3,})$/i);
+  if(m){const a=_mes(m[1]);if(a)return{start:a,end:a};}
+  return null;
+}
+
+function calcVelocidade(task){
+  const prazo=parsePrazo(task.prazo);
+  const progress=getProgress(task.code);
+  const cur=new Date().getMonth()+1;
+  if(!prazo)return{timeElapsed:null,progress,velocity:null,cls:'ok',label:'—'};
+  if(cur<prazo.start)return{timeElapsed:0,progress,velocity:null,cls:'ok',label:'Não iniciado'};
+  const total=prazo.end-prazo.start+1;
+  const elapsed=cur>prazo.end?total:cur-prazo.start;
+  const timeElapsed=Math.round((elapsed/total)*100);
+  if(timeElapsed===0)return{timeElapsed:0,progress,velocity:null,cls:'ok',label:'—'};
+  const velocity=progress/timeElapsed;
+  let cls,label;
+  if(velocity>=1.2){cls='adiantado';label='Adiantado';}
+  else if(velocity>=0.8){cls='ok';label='OK';}
+  else if(velocity>=0.5){cls='atencao';label='Atenção';}
+  else{cls='critico';label='Crítico';}
+  return{timeElapsed,progress,velocity,cls,label};
+}
+
+function calcSectorVelocidade(sector){
+  const vels=sector.tasks.map(t=>calcVelocidade(t)).filter(v=>v.velocity!==null);
+  if(!vels.length)return{velocity:null,cls:'ok',label:'—',avgProg:0,avgTime:0};
+  const velocity=vels.reduce((a,v)=>a+v.velocity,0)/vels.length;
+  const avgProg=Math.round(sector.tasks.reduce((a,t)=>a+getProgress(t.code),0)/sector.tasks.length);
+  const avgTime=Math.round(vels.reduce((a,v)=>a+v.timeElapsed,0)/vels.length);
+  let cls,label;
+  if(velocity>=1.2){cls='adiantado';label='Adiantado';}
+  else if(velocity>=0.8){cls='ok';label='OK';}
+  else if(velocity>=0.5){cls='atencao';label='Atenção';}
+  else{cls='critico';label='Crítico';}
+  return{velocity,cls,label,avgProg,avgTime};
+}
+
+function velColor(cls){
+  return{adiantado:'#22c55e',ok:'var(--ok-text)',atencao:'var(--warn-text)',critico:'var(--danger-text)'}[cls]||'var(--text-muted)';
+}
+
+/* ═══ PROGRESSO ═══ */
+const PROG_KEY='pta_iv_comar_progresso';
+function loadProgStore(){try{return JSON.parse(localStorage.getItem(PROG_KEY)||'{}');}catch{return{};}}
+function saveProgStore(s){localStorage.setItem(PROG_KEY,JSON.stringify(s));}
+function getAutoProgress(status){return{'nao-iniciada':0,'andamento':50,'concluida':100,'atrasada':10}[status]??0;}
+function getProgress(code){
+  const st=loadProgStore();
+  if(st[code]?.mode==='manual')return st[code].value;
+  const task=SECTORS.flatMap(s=>s.tasks).find(t=>t.code===code);
+  return getAutoProgress(task?.status||'nao-iniciada');
+}
+
+function buildProgressPanel(task,editable){
+  const store=loadProgStore();
+  const mode=store[task.code]?.mode||'auto';
+  const autoVal=getAutoProgress(task.status);
+  const progress=mode==='manual'?(store[task.code]?.value??autoVal):autoVal;
+  const vel=calcVelocidade(task);
+  const vClr=velColor(vel.cls);
+
+  const wrap=document.createElement('div');
+  wrap.className='prog-panel';wrap.id='prog-'+task.code;
+
+  const hdr=document.createElement('div');
+  hdr.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;';
+  const titleSpan=document.createElement('span');
+  titleSpan.style.cssText='font-size:10px;font-weight:700;color:var(--accent-glow);letter-spacing:0.8px;text-transform:uppercase;';
+  titleSpan.textContent='Progresso';
+  const modeSpan=document.createElement('span');
+  modeSpan.id='pmode-'+task.code;
+  modeSpan.style.cssText=`font-size:9px;font-weight:700;padding:1px 6px;border-radius:3px;background:${mode==='manual'?'var(--warn-bg)':'var(--ok-bg)'};color:${mode==='manual'?'var(--warn-text)':'var(--ok-text)'};border:1px solid ${mode==='manual'?'var(--warn-border)':'var(--ok-border)'};`;
+  modeSpan.textContent=mode==='manual'?'M':'A';
+  hdr.appendChild(titleSpan);hdr.appendChild(modeSpan);
+  if(vel.velocity!==null){
+    const velSpan=document.createElement('span');
+    velSpan.style.cssText='font-size:10px;color:var(--text-muted);margin-left:2px;';
+    velSpan.innerHTML=`Vel: <strong style="color:${vClr}">${vel.velocity.toFixed(2)}x — ${vel.label}</strong>`;
+    hdr.appendChild(velSpan);
+  }
+  wrap.appendChild(hdr);
+
+  const barsWrap=document.createElement('div');barsWrap.className='prog-bars';
+  const timeBar=document.createElement('div');timeBar.className='prog-bar-time';
+  timeBar.style.width=(vel.timeElapsed??0)+'%';
+  const realBar=document.createElement('div');realBar.className='prog-bar-real';
+  realBar.style.cssText=`width:${progress}%;background:${vClr};`;
+  const lbls=document.createElement('div');lbls.className='prog-bar-labels';
+  lbls.innerHTML=`<span class="prog-bar-lbl">Progresso: ${progress}%</span><span class="prog-bar-lbl" style="opacity:0.65">Tempo: ${vel.timeElapsed??'—'}%</span>`;
+  barsWrap.appendChild(timeBar);barsWrap.appendChild(realBar);barsWrap.appendChild(lbls);
+  wrap.appendChild(barsWrap);
+
+  if(editable){
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:8px;margin-top:3px;';
+    const slider=document.createElement('input');
+    slider.type='range';slider.min=0;slider.max=100;slider.step=5;
+    slider.value=progress;slider.className='prog-slider';slider.id='pslider-'+task.code;
+    const lbl=document.createElement('span');
+    lbl.style.cssText='font-size:10px;color:var(--text-muted);min-width:30px;text-align:right;font-family:monospace;';
+    lbl.id='psliderlbl-'+task.code;lbl.textContent=progress+'%';
+    const resetBtn=document.createElement('button');
+    resetBtn.textContent='Auto';
+    resetBtn.style.cssText='font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-family:inherit;white-space:nowrap;';
+    slider.addEventListener('input',()=>{
+      const val=parseInt(slider.value);lbl.textContent=val+'%';
+      const st2=loadProgStore();st2[task.code]={mode:'manual',value:val};saveProgStore(st2);
+      updateProgDisplay(task.code,val,'manual',vClr);
+    });
+    resetBtn.addEventListener('click',()=>{
+      const st2=loadProgStore();delete st2[task.code];saveProgStore(st2);
+      const av=getAutoProgress(task.status);
+      slider.value=av;lbl.textContent=av+'%';
+      updateProgDisplay(task.code,av,'auto',vClr);
+    });
+    row.appendChild(slider);row.appendChild(lbl);row.appendChild(resetBtn);
+    wrap.appendChild(row);
+  }
+  return wrap;
+}
+
+function updateProgDisplay(code,progress,mode,color){
+  const realBar=document.querySelector('#prog-'+code+' .prog-bar-real');
+  if(realBar){realBar.style.width=progress+'%';realBar.style.background=color;}
+  const lblEl=document.querySelector('#prog-'+code+' .prog-bar-lbl');
+  if(lblEl)lblEl.textContent='Progresso: '+progress+'%';
+  const modeEl=document.getElementById('pmode-'+code);
+  if(modeEl){
+    modeEl.textContent=mode==='manual'?'M':'A';
+    modeEl.style.background=mode==='manual'?'var(--warn-bg)':'var(--ok-bg)';
+    modeEl.style.color=mode==='manual'?'var(--warn-text)':'var(--ok-text)';
+    modeEl.style.borderColor=mode==='manual'?'var(--warn-border)':'var(--ok-border)';
+  }
+}
+
+function refreshProgPanel(task){
+  const el=document.getElementById('prog-'+task.code);
+  if(!el)return;
+  const sector=SECTORS.find(s=>s.tasks.includes(task));
+  const newPanel=buildProgressPanel(task,sector?canEdit(sector.id):false);
+  el.replaceWith(newPanel);
+}
+
 /* ═══ SETORES ═══ */
 function renderSectors(q) {
   const grid = document.getElementById('sectors-grid');
@@ -941,9 +1133,10 @@ function renderSectors(q) {
 
     const sectorEditable = canEdit(sector.id);
     const lockIcon = sectorEditable ? '' : ' 🔒';
+    const sv = calcSectorVelocidade(sector);
 
     const header = document.createElement('div'); header.className = 'sector-card-header';
-    header.innerHTML = `<span class="sector-name">${sector.name}${lockIcon}</span><span class="sector-meta"><span class="sector-badge ${cls}">${pct}% — ${conc}/${total}</span><span class="sector-chevron" id="chev-${sector.id}">▼</span></span>`;
+    header.innerHTML = `<span class="sector-name">${sector.name}${lockIcon}</span><span class="sector-meta"><span class="sector-badge ${cls}">${pct}% — ${conc}/${total}</span><span class="vel-badge vel-${sv.cls}" id="vbadge-${sector.id}">${sv.velocity!==null?sv.velocity.toFixed(2)+'x '+sv.label:'—'}</span><span class="sector-chevron" id="chev-${sector.id}">▼</span></span>`;
     header.addEventListener('click', () => {
       const td = document.getElementById('tasks-'+sector.id);
       const chev = document.getElementById('chev-'+sector.id);
@@ -973,6 +1166,7 @@ function renderSectors(q) {
       if (sectorEditable) {
         const sel = buildStatusSel(t.status, 'task-status-sel', val => {
           t.status = val;
+          refreshProgPanel(t);
           updateKPIs();
           updateSectorHeader(sector);
           // Persist to Supabase (fire and forget)
@@ -1005,6 +1199,7 @@ function renderSectors(q) {
       });
 
       const opDiv = document.createElement('div'); opDiv.className = 'ocorrencias-panel'; opDiv.id = 'op-'+t.code;
+      opDiv.appendChild(buildProgressPanel(t, sectorEditable));
       opDiv.appendChild(buildOcorrPanel(t.code, sectorEditable));
 
       block.appendChild(row); block.appendChild(opDiv);
@@ -1119,6 +1314,9 @@ function updateSectorHeader(sector) {
   const cls   = pct>=60?'ok':pct>=30?'warn':'danger';
   const badge = document.querySelector('#tasks-'+sector.id)?.previousSibling?.previousSibling?.querySelector('.sector-badge');
   if (badge) { badge.className = 'sector-badge '+cls; badge.textContent = pct+'% — '+conc+'/'+total; }
+  const sv = calcSectorVelocidade(sector);
+  const vbadge = document.getElementById('vbadge-'+sector.id);
+  if (vbadge) { vbadge.className='vel-badge vel-'+sv.cls; vbadge.textContent=sv.velocity!==null?sv.velocity.toFixed(2)+'x '+sv.label:'—'; }
 }
 
 function expandAll()   { document.querySelectorAll('.sector-tasks').forEach(e=>e.classList.add('open')); document.querySelectorAll('.sector-chevron').forEach(e=>e.classList.add('open')); }
@@ -1161,6 +1359,8 @@ function updateKPIs() {
   }).join('');
 
   updateOcorrSummary();
+  renderRanking();
+  renderVelocityAlerts();
 }
 
 /* ═══ CLOCKS ═══ */
@@ -1215,8 +1415,13 @@ function renderClocks() {
     const wrap = document.createElement('div'); wrap.className = 'clock-wrap';
     const canvas = document.createElement('canvas'); canvas.className = 'clock-canvas'; canvas.width = 140; canvas.height = 140;
     const centerDiv = document.createElement('div'); centerDiv.className = 'clock-center-text';
-    const pctEl = document.createElement('div'); pctEl.className = 'clock-pct'; pctEl.style.color = colors.text; pctEl.textContent = pct+'%';
-    const lbl = document.createElement('div'); lbl.className = 'clock-label'; lbl.textContent = 'concluído';
+    const sectorObj = SECTORS.find(s=>s.id===d.name);
+    const csv = sectorObj ? calcSectorVelocidade(sectorObj) : null;
+    const pctEl = document.createElement('div'); pctEl.className = 'clock-pct';
+    pctEl.style.color = csv?.velocity!=null ? velColor(csv.cls) : colors.text;
+    pctEl.textContent = csv?.velocity!=null ? csv.velocity.toFixed(2)+'x' : pct+'%';
+    const lbl = document.createElement('div'); lbl.className = 'clock-label';
+    lbl.textContent = csv?.velocity!=null ? csv.label : 'concluído';
     centerDiv.appendChild(pctEl); centerDiv.appendChild(lbl);
     wrap.appendChild(canvas); wrap.appendChild(centerDiv);
     const stats = document.createElement('div'); stats.className = 'clock-stats';
@@ -1344,6 +1549,78 @@ async function limparSolicitacoes() {
   const json = await res.json();
   if (!res.ok) { alert('Erro ao limpar: ' + (json.error || 'Falha na operação')); return; }
   renderSolicitacoes();
+}
+
+/* ═══ RANKING ═══ */
+let _rankSort='velocity';
+function renderRanking(){
+  const sec=document.getElementById('ranking-section');
+  if(!sec)return;
+  const rows=SECTORS.map(sector=>{
+    const sv=calcSectorVelocidade(sector);
+    return{id:sector.id,velocity:sv.velocity,cls:sv.cls,label:sv.label,avgProg:sv.avgProg,avgTime:sv.avgTime};
+  });
+  rows.sort((a,b)=>_rankSort==='velocity'?(b.velocity??-1)-(a.velocity??-1):(b.avgProg??0)-(a.avgProg??0));
+  sec.innerHTML='';
+  const wrap=document.createElement('div');wrap.className='ranking-wrap';
+  const stitle=document.createElement('div');stitle.className='section-title';stitle.style.marginBottom='10px';
+  stitle.innerHTML='Ranking de Velocidade por Setor';
+  const toggle=document.createElement('div');toggle.className='rank-toggle';
+  [{k:'velocity',lbl:'Por Velocidade'},{k:'progresso',lbl:'Por Progresso'}].forEach(({k,lbl})=>{
+    const btn=document.createElement('button');
+    btn.className='rank-toggle-btn'+(k===_rankSort?' active':'');
+    btn.textContent=lbl;
+    btn.addEventListener('click',()=>{_rankSort=k;renderRanking();});
+    toggle.appendChild(btn);
+  });
+  const table=document.createElement('table');table.className='ranking-table';
+  table.innerHTML='<thead><tr><th>#</th><th>Setor</th><th>Velocidade</th><th>Progresso Médio</th><th>Tempo Decorrido</th><th>Status</th></tr></thead>';
+  const tbody=document.createElement('tbody');
+  rows.forEach((r,i)=>{
+    const tr=document.createElement('tr');
+    const vClr=velColor(r.cls);
+    tr.innerHTML=`
+      <td style="font-weight:700;color:var(--text-primary);font-family:monospace;">${i+1}</td>
+      <td style="font-weight:600;color:var(--text-primary);">${r.id}</td>
+      <td style="font-family:monospace;color:${vClr};font-weight:700;">${r.velocity!==null?r.velocity.toFixed(2)+'x':'—'}</td>
+      <td><div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:5px;background:var(--bg-input);border-radius:3px;overflow:hidden;"><div style="height:100%;width:${r.avgProg??0}%;background:${vClr};border-radius:3px;"></div></div><span style="font-size:10px;font-family:monospace;color:var(--text-muted);min-width:30px;">${r.avgProg??'—'}%</span></div></td>
+      <td style="font-family:monospace;font-size:11px;">${r.avgTime!=null?r.avgTime+'%':'—'}</td>
+      <td><span class="vel-badge vel-${r.cls}">${r.label}</span></td>`;
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(stitle);wrap.appendChild(toggle);wrap.appendChild(table);
+  sec.appendChild(wrap);
+}
+
+/* ═══ ALERTAS DE VELOCIDADE ═══ */
+function renderVelocityAlerts(){
+  const list=document.getElementById('vel-alerts-list');
+  if(!list)return;
+  const cur=new Date().getMonth()+1;
+  const alerts=[];
+  SECTORS.forEach(sector=>{
+    sector.tasks.forEach(task=>{
+      if(task.status==='concluida')return;
+      const vel=calcVelocidade(task);
+      if(vel.velocity===null||vel.velocity>=0.5)return;
+      const prazo=parsePrazo(task.prazo);
+      if(!prazo||cur>prazo.end)return;
+      alerts.push({task,sector,vel});
+    });
+  });
+  if(!alerts.length){
+    list.innerHTML='<div style="font-size:13px;color:var(--text-dim);font-style:italic;padding:8px 0;">Nenhum alerta de velocidade no momento.</div>';
+    return;
+  }
+  list.innerHTML=alerts.map(({task,sector,vel})=>{
+    const urgent=vel.velocity<0.2;
+    const cls=urgent?'alert-red':'alert-warn';
+    const tcls=urgent?'alert-text-red':'alert-text-warn';
+    const msg=urgent?'Intervenção imediata necessária':'Acelerar execução — risco de não cumprimento';
+    const nm=task.name.length>70?task.name.slice(0,70)+'…':task.name;
+    return`<div class="${cls}"><div class="${tcls}"><strong>${nm}</strong></div><div class="${tcls}" style="font-size:12px;margin-top:3px;">Velocidade: ${vel.velocity.toFixed(2)}x · Progresso: ${vel.progress}% · Tempo decorrido: ${vel.timeElapsed}% · <strong>${msg}</strong></div><div class="alert-code">${task.code} · ${sector.name.split('—')[0].trim()} · Prazo: ${task.prazo}</div></div>`;
+  }).join('');
 }
 
 function drawDonut(canvas, d, colors) {
