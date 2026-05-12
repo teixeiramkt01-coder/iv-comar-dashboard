@@ -496,7 +496,10 @@ html,body{min-height:100%;background:var(--bg-root);font-family:-apple-system,Bl
 
     <!-- SOLICITAÇÕES (ADMIN) -->
     <div id="panel-solicitacoes" class="panel">
-      <div class="section-title">Solicitações de Acesso</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div class="section-title" style="margin-bottom:0;">Solicitações de Acesso</div>
+        <button class="btn-rejeitar" onclick="limparSolicitacoes()" style="font-size:11px;padding:6px 14px;">Limpar tudo</button>
+      </div>
       <div id="solicit-list" class="solicit-list">
         <div class="solicit-empty">Carregando...</div>
       </div>
@@ -1322,6 +1325,13 @@ async function handleSolicitacao(id, action, btn) {
     btn.closest('.solicit-actions').querySelectorAll('button').forEach(b => b.disabled = false);
     return;
   }
+  renderSolicitacoes();
+}
+
+async function limparSolicitacoes() {
+  if (!confirm('Tem certeza que deseja limpar todas as solicitações? Esta ação não pode ser desfeita.')) return;
+  const { error } = await sb.from('user_requests').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  if (error) { alert('Erro ao limpar: ' + error.message); return; }
   renderSolicitacoes();
 }
 
